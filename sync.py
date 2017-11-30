@@ -4,21 +4,18 @@ import sys
 import os
 import retMal
 import linecache
-import vars
+import json
 import xml.etree.ElementTree as ET
 import multiprocessing
 from multiprocessing import Process
+from collections import OrderedDict
 
-#for automation tools because PATH is hard
-os.chdir(vars.script_loc)
+def readJson():
+	json_data=open("vars.json").read()
+	data = json.loads(json_data, object_pairs_hook=OrderedDict)
+	return data #an OrderedDict
 
-filePath = vars.host_download_dir + sys.argv[3]
-path = sys.argv[1]
-
-if "seedbox/downloads/Anime" not in path:
-    sys.exit()
-
-def sync (x, hashed):
+def sync (x, hashed, settings, seriesName, episode, filename, userList, custom_title_Avi_len, custom_title_Kan_len):
     print "Series: " + seriesName
     print "Episode: " + episode
     print x
@@ -26,43 +23,39 @@ def sync (x, hashed):
     index = 0
     found = "false"
 
-    command = "python retMal.py " + '\"' + vars.usernames[x] + '\"'
+    command = "python retMal.py " + '\"' + userList[x] + '\"'
     os.system(command)
     file_input = open("flags", 'rb')
 
-    exists = file_input.read(1)
-    database = vars.usernames[x] + ".xml"
+    database = userList[x] + ".xml"
 
-    if exists == '0':
-        sys.exit()
-    else:
-        with open(database, 'rt') as f:
-            tree = ET.parse(f)
+    with open(database, 'rt') as f:
+        tree = ET.parse(f)
 
-            for node in tree.findall('.//anime'):
-                raw_status = node.find('my_status').text
-                status = raw_status.strip()
-                if status == '1' or status == '6':
-                    raw_title = node.find('series_title').text
-                    raw_alt_title = node.find('series_synonyms').text #this is a list
-                    raw_my_watched_episodes = node.find('my_watched_episodes').text
+        for node in tree.findall('.//anime'):
+            raw_status = node.find('my_status').text
+            status = raw_status.strip()
+            if status == '1' or status == '6':
+                raw_title = node.find('series_title').text
+                raw_alt_title = node.find('series_synonyms').text #this is a list
+                raw_my_watched_episodes = node.find('my_watched_episodes').text
 
-                    title = raw_title.strip()
-                    alt_title_unsplit = raw_alt_title.strip()
-                    alt_title = alt_title_unsplit.split('; ')
-                    my_watched_episodes = raw_my_watched_episodes.strip()
+                title = raw_title.strip()
+                alt_title_unsplit = raw_alt_title.strip()
+                alt_title = alt_title_unsplit.split('; ')
+                my_watched_episodes = raw_my_watched_episodes.strip()
 
-                    for element in alt_title:
-                        if found == "false":
-                            if title == seriesName or element == seriesName:
-                                found = "true"
+                for element in alt_title:
+                    if found == "false":
+                        if title == seriesName or element == seriesName:
+                            found = "true"
 
         if x == 0:
             listLen = custom_title_Avi_len
-            customTitleList = vars.custom_title_Avi
+            customTitleList = settings['Users']['Smoothtalk']["custom_titles"]
         elif x == 1:
             listLen = custom_title_Kan_len
-            customTitleList = vars.custom_title_Kan
+            customTitleList = settings['Users']['shinigamibob']["custom_titles"]
 
         while index < listLen and found == "false":
             CustomTitle = customTitleList[index].strip()
@@ -74,23 +67,19 @@ def sync (x, hashed):
             if episode > int(my_watched_episodes):
                 if x == 0:
                     found = "true"
-                    command = "rsync --progress -v -z -e 'ssh -p" + vars.userport1 + "'" + " \"" + filePath + "\"" + ' ' + "\"" + vars.a_host + ":" + vars.remote_download_dir1 + "\""
+                    command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + "'" + " \"" + filePath + "\"" + ' ' + "\"" + settings['Users']['Smoothtalk']['remote_host'] + ":" + settings['Users']['Smoothtalk']['remote_download_dir'] + "\""
+                    print command
                     os.system(command)
-                    command = "ssh -p" + vars.userport1 + ' ' + vars.a_host +  " \"mv '" + vars.remote_download_dir1 +  sys.argv[3] + "' '" + vars.remote_download_dir1 + filename + "'\""
-		    os.system(command)
-                    command = "echo \'/msg Smoothtalk " + sys.argv[3] + " uploaded and renamed successfully\' > " + vars.irrsi_rc_loc
-		    os.system(command)
-                    command = "echo \'/msg John_Titor " + sys.argv[3] + " uploaded and renamed successfully\' > " + vars.irrsi_rc_loc
-		    os.system(command)
+                    command = "ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + ' ' + settings['Users']['Smoothtalk']['remote_host'] +  " \"mv '" + settings['Users']['Smoothtalk']['remote_download_dir'] +  sys.argv[3] + "' '" + settings['Users']['Smoothtalk']['remote_download_dir'] + filename + "'\""
+                    os.system(command)
                 elif x == 1:
                     found = "true"
-                    command = "rsync --progress -v -z -e 'ssh -p" + vars.userport2 + "'" + " \"" + filePath + "\"" + ' ' + "\"" + vars.k_host + ":" + vars.remote_download_dir2 + "\""
+                    command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['shinigamibob']['remote_port'] + "'" + " \"" + filePath + "\"" + ' ' + "\"" + settings['Users']['shinigamibob']['remote_host'] + ":" + settings['Users']['shinigamibob']['remote_download_dir'] + "\""
                     os.system(command)
-                    command = "ssh -p" + vars.userport2 + ' ' + vars.k_host +  " \"mv '" + vars.remote_download_dir2 +  sys.argv[3] + "' '" + vars.remote_download_dir2 + filename + "'\""
-                    os.system(command)
-                    command = "echo '/msg localhost " + sys.argv[3] + " uploaded and renamed successfully\' > " + vars.irrsi_rc_loc
+                    command = "ssh -p" + settings['Users']['shinigamibob']['remote_port'] + ' ' + settings['Users']['shinigamibob']['remote_host'] +  " \"mv '" + settings['Users']['shinigamibob']['remote_download_dir'] + sys.argv[3] + "' '" + settings['Users']['shinigamibob']['remote_download_dir'] + filename + "'\""
                     os.system(command)
             if hashed == 0:
+                os.chdir(settings['System Settings']['script_location'])
                 completed = open("completed.txt", "a")
                 completed.write(hash)
                 completed.write('\n')
@@ -98,89 +87,47 @@ def sync (x, hashed):
                 hashed = 1
             elif x == 1:
                 if hashed == 0:
+                    os.chdir(settings['System Settings']['script_location'])
                     completed = open("completed.txt", "a")
                     completed.write(hash)
                     completed.write('\n')
                     completed.close()
 
-        command = "rm flags"
 	os.system(command)
     return
 
-    #     if found == "true":
-    #         if episode > int(my_watched_episodes):
-    #             tempSeriesName = seriesName.replace(" ", "\ ")
-    #             if x == 0:
-    #                 if seriesName.find(' ') != -1: #series has space
-    #                     found = "true"
-    #                     command = "rsync -aq --rsync-path='mkdir -p " + vars.remote_download_dir1 + tempSeriesName + "/ && rsync'" + " --progress -v -z -e 'ssh -p" + vars.userport1 + "'" + " \"" + filePath + "\"" + ' ' + "\"" + vars.a_host + ":" + vars.remote_download_dir1 + tempSeriesName + "/" + "\""
-    #                     os.system(command)
-    #                     command = "ssh -p" + vars.userport1 + ' ' + vars.a_host +  " \"mv '" + vars.remote_download_dir1 + seriesName + '/' + sys.argv[3] + "' '" + vars.remote_download_dir1 + tempSeriesName + '/' + filename + "'\""
-    #                     os.system(command)
-    #                 else:
-    #                     found = "true"
-    #                     command = "rsync -aq --rsync-path='mkdir -p " + vars.remote_download_dir1 + seriesName + "/ && rsync'" + " --progress -v -z -e 'ssh -p" + vars.userport1 + "'" + " \"" + filePath + "\"" + ' ' + "\"" + vars.a_host + ":" + vars.remote_download_dir1 + tempSeriesName + "/" + "\""
-    #                     os.system(command)
-    #                     command = "ssh -p" + vars.userport1 + ' ' + vars.a_host +  " \"mv '" + vars.remote_download_dir1 + seriesName + '/' + sys.argv[3] + "' '" + vars.remote_download_dir1 + seriesName + '/' + filename + "'\""
-    #                     os.system(command)
-    #                 command = "echo \'/msg Smoothtalk " + sys.argv[3] + " uploaded and renamed successfully\' > " + vars.irrsi_rc_loc
-    #                 os.system(command)
-    #                 command = "echo \'/msg John_Titor " + sys.argv[3] + " uploaded and renamed successfully\' > " + vars.irrsi_rc_loc
-    #                 os.system(command)
-    #             elif x == 1:
-    #                 if seriesName.find(' ') != -1: #series has space
-    #                     found = "true"
-    #                     command = "rsync -aq --rsync-path='mkdir -p " + vars.remote_download_dir2 + tempSeriesName + "/ && rsync'" + " --progress -v -z -e 'ssh -p" + vars.userport2 + "'" + " \"" + filePath + "\"" + ' ' + "\"" + vars.k_host + ":" + vars.remote_download_dir22 + tempSeriesName + "/" + "\""
-    #                     os.system(command)
-    #                     command = "ssh -p" + vars.userport2 + ' ' + vars.k_host +  " \"mv '" + vars.remote_download_dir2 + seriesName + '/' + sys.argv[3] + "' '" + vars.remote_download_dir2 + tempSeriesName + '/' + filename + "'\""
-    #                     os.system(command)
-    #                 else:
-    #                     found = "true"
-    #                     command = "rsync -aq --rsync-path='mkdir -p " + vars.remote_download_dir2 + seriesName + "/ && rsync'" + " --progress -v -z -e 'ssh -p" + vars.userport2 + "'" + " \"" + filePath + "\"" + ' ' + "\"" + vars.k_host + ":" + vars.remote_download_dir2 + tempSeriesName + "/" + "\""
-    #                     os.system(command)
-    #                     command = "ssh -p" + vars.userport2 + ' ' + vars.k_host +  " \"mv '" + vars.remote_download_dir2 + seriesName + '/' + sys.argv[3] + "' '" + vars.remote_download_dir2 + seriesName + '/' + filename + "'\""
-    #                     os.system(command)
-    #                 command = "echo '/msg localhost " + sys.argv[3] + " uploaded and renamed successfully\' > " + vars.irrsi_rc_loc
-    #                 os.system(command)
-    #         if hashed == 0:
-    #             completed = open("completed.txt", "a")
-    #             completed.write(hash)
-    #             completed.write('\n')
-    #             completed.close()
-    #             hashed = 1
-    #         elif x == 1:
-    #             if hashed == 0:
-    #                 completed = open("completed.txt", "a")
-    #                 completed.write(hash)
-    #                 completed.write('\n')
-    #                 completed.close()
-    #
-    #     command = "rm flags"
-	# os.system(command)
-    # return
-
-#change sys.argv[1] to renamed
-hash = sys.argv[2]
-hashed = 0
-
-#substring the torrent name. If the script throws an exception here later
-#on, switch index to find
-tempName = sys.argv[3].replace("_", " ")
-firstHyphen = tempName.rfind(' - ')
-firstCBrac = tempName.index(']', 0)
-seriesName = tempName[firstCBrac+2:firstHyphen]
-episode = tempName[firstHyphen+3:]
-episode = episode[:episode.index(' ',0)]
-filename = seriesName + ' - ' + episode + '.mkv'
-
-seriesName = seriesName.strip()
-user_len = len(vars.usernames)
-custom_title_Avi_len = len(vars.custom_title_Avi)
-custom_title_Kan_len = len(vars.custom_title_Kan)
-
 if __name__=='__main__':
+    settings = readJson()
+    #change sys.argv[1] to renamed
+    hash = sys.argv[2]
+    hashed = 0
+
+    #substring the torrent name. If the script throws an exception here later
+    #on, switch index to find
+    tempName = sys.argv[3].replace("_", " ")
+    firstHyphen = tempName.rfind(' - ')
+    firstCBrac = tempName.index(']', 0)
+    seriesName = tempName[firstCBrac+2:firstHyphen]
+    episode = tempName[firstHyphen+3:]
+    episode = episode[:episode.index(' ',0)]
+    filename = seriesName + ' - ' + episode + '.mkv'
+
+    seriesName = seriesName.strip()
+    custom_title_Avi_len = len(settings['Users']['Smoothtalk']['custom_titles'])
+    custom_title_Kan_len = len(settings['Users']['shinigamibob']['custom_titles'])
+
+    #for automation tools because PATH is hard
+    os.chdir(settings['System Settings']['script_location'])
+    filePath = settings['System Settings']['host_download_dir'] + sys.argv[3]
+    path = sys.argv[1]
+
+    userList = settings['Users'].keys()
+
+    if "downloads/Anime" not in path:
+        sys.exit()
+
     jobs = []
-    for x in range(len(vars.usernames)):
-        p = multiprocessing.Process(target=sync, args=(x,hashed,))
+    for x in range(len(settings['Users'])):
+        p = multiprocessing.Process(target=sync, args=(x, hashed, settings, seriesName, episode, filename, userList, custom_title_Avi_len, custom_title_Kan_len))
         jobs.append(p)
         p.start()

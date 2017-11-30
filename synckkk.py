@@ -96,10 +96,6 @@ def sync(x, settings, User, TvShow, re, traceback, filePath, glob, fileHash):
 				os.system(command)
 				command = "ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + ' ' + settings['Users']['Smoothtalk']['remote_host'] +  " \"mv '" + settings['Users']['Smoothtalk']['remote_download_dir'] + innerFileName + "' '" + settings['Users']['Smoothtalk']['remote_download_dir'] + filename + "'\""
 				os.system(command)
-				command = "echo \'/msg Smoothtalk " + filename + " uploaded and renamed successfully\' > " + settings['System Settings']['irrsi_rc_loc']
-				os.system(command)
-				command = "echo \'/msg John_Titor " + filename + " uploaded and renamed successfully\' > " + settings['System Settings']['irrsi_rc_loc']
-				os.system(command)
 
 				os.chdir(settings['System Settings']['script_location'])
 				completed = open("completed.txt", "a")

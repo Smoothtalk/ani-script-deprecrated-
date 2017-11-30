@@ -38,12 +38,9 @@ command = "python retMal.py " + '\"' + userList[0] + '\"'
 os.system(command)
 command = "python retMal.py " + '\"' + userList[1] + '\"'
 os.system(command)
-command = "python retMal.py " + '\"' + userList[2] + '\"'
-os.system(command)
 
 customTitleListA = settings['Users']['Smoothtalk']['custom_titles']
 customTitleListK = settings['Users']['shinigamibob']['custom_titles']
-customTitleListJ = settings['Users']['kukikat']['custom_titles']
 
 currDate = datetime.datetime.today()
 lastWeek = currDate - datetime.timedelta(days=7)
@@ -73,7 +70,7 @@ for x in range(0,(len(userList))):
 			if alt_title[0] == "" :#and len(alt_title) > 1:
 				alt_title.remove('')
 
-			if ('00' not in series_end_date):
+			if ('-00' not in series_end_date):
 				seriesEnd = datetime.datetime.strptime(series_end_date, '%Y-%m-%d') #conversion from string to datetime
 
 			tempAnime = anime()
@@ -123,19 +120,6 @@ while index < len(customTitleListK):
 		allShows.append(tempAnime)
 	index+=1;
 
-index = 0
-tempAnime = anime();
-while index < len(customTitleListJ):
-	tempAnime = anime()
-	dupe = "false"
-	tempAnime.title = customTitleListJ[index].strip()
-	for i in allShows:
-		if i.title.split()[:2] == tempAnime.title.split()[:2]:
-			dupe = "true"
-	if dupe == "false":
-		allShows.append(tempAnime)
-	index+=1;
-
 truncShows = []
 for i in allShows:
   truncShows.append(' '.join(i.title.split()[:2])) #gets the first two words in the title for easier processing
@@ -173,7 +157,7 @@ for i in matches:
 		command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
 		os.system(command)
 
-		command = "mv " + fileWithQuotes + ' ' + "../downloads/watch/"
+		command = "mv " + fileWithQuotes + ' ' + "../../downloads/watch/"
 		os.system(command)
 		tidfile.write(tid+"\n")
 
