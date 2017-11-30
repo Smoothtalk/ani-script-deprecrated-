@@ -1,73 +1,114 @@
+#!/usr/bin/python
+
+import sys
+import os
+import retMal
+import linecache
 import re
 import codecs
-import xml.etree.ElementTree as ET
-import urllib2
+import glob
 import json
-from urllib2 import Request, urlopen
+import xml.etree.ElementTree as ET
+import multiprocessing
+import urllib2
+import simplejson as json
 from fuzzywuzzy import fuzz
+from pprint import pprint
+from urllib2 import Request, urlopen
 from trakt.users import User
+from multiprocessing import Process
 from bs4 import BeautifulSoup
 from collections import OrderedDict
 
-#5 0 * * 0 find /home/seedbox/ani-script/dledshows -size 0 -delete in crontab
-#Do we even know who is this TvShow is? -ridiculous hand motions-
 class TvShow():
 	title = ""
 	last_watched_date = -1
 	last_watched_episode = -1
-
-HD_TV_Shows_RSS = "https://rarbg.to/rssdd.php?category=41"
-database = "RarBG" + ".xml"
-allShows = []
 
 def readJson():
 	json_data=open("vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
-settings = readJson()
+def getToken():
+	getTokenURL = "https://torrentapi.org/pubapi_v2.php?get_token=get_token"
 
-my = User(settings['Users']['Smoothtalk']['trUserName'])
+	try:
+		req = urllib2.Request(getTokenURL, None)
+		req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36')
+		response = urllib2.urlopen(req)
 
-for y in range(len(my.watched_shows)):
-	dict = my.watched_shows[y].seasons[-1]
+		soup = BeautifulSoup(response.read(), "html.parser")
+		soup2 = soup.prettify()
 
-	# gets the episodes (change to -1 to get current season value
-	# -2 gets all teh episodes you've watched
-	fKey = dict.keys()[-2]
-	values = dict[fKey]
-	last_episode_watched = values[-1]
+		token = soup2[10:-3]
 
-	episode_Number =  last_episode_watched['number']
-	date_Watched_At = last_episode_watched['last_watched_at']
+		return token
+	except urllib2.HTTPError,err:
+		print err
 
-	traktShow = TvShow();
-	traktShow.title = my.watched_shows[y]
-	traktShow.last_watched_date = date_Watched_At
-	traktShow.last_watched_episode = episode_Number
-	allShows.append(traktShow)
 
-try:
-	req = urllib2.Request(HD_TV_Shows_RSS)
-	req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36')
-	response = urllib2.urlopen(req)
+def searchTVTorrents(token, database):
+	#category 41 is hdtv episodes
+	listTorrentsURL = "https://torrentapi.org/pubapi_v2.php?mode=list&category=41&format=json&token="
+	requestURL = listTorrentsURL + token
 
-	soup = BeautifulSoup(response.read(), "html.parser")
-	soup2 = soup.prettify()
-	output = codecs.open(database, 'wb', 'utf-8')
-	output.write(soup2)
-	output.close()
+	try:
+		req = urllib2.Request(requestURL, None)
+		req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36')
+		response = urllib2.urlopen(req)
+
+		soup = BeautifulSoup(response.read(), "html.parser")
+		soup2 = soup.prettify()
+
+		output = codecs.open(database, 'wb', 'utf-8')
+		output.write(soup2)
+		output.close()
+
+	except urllib2.HTTPError,err:
+		print err
+
+
+def compare(allShows, settings):
+	fileNameKey = "filename"
+	magnetKey = "download"
+
+	my = User(settings['Users']['Smoothtalk']['trUserName'])
+
+	for y in range(len(my.watched_shows)):
+		dict = my.watched_shows[y].seasons[-1]
+
+		# gets the episodes (change to -1 to get current season value
+		# -2 gets all teh episodes you've watched
+		fKey = dict.keys()[-2]
+		values = dict[fKey]
+		last_episode_watched = values[-1]
+
+		episode_Number =  last_episode_watched['number']
+		date_Watched_At = last_episode_watched['last_watched_at']
+
+		traktShow = TvShow();
+		traktShow.title = my.watched_shows[y]
+		traktShow.last_watched_date = date_Watched_At
+		traktShow.last_watched_episode = episode_Number
+		allShows.append(traktShow)
+
+	with open(database, 'r') as f:
+		data = json.load(f)
+		json_data = json.dumps(data)
+		torrents = data.values()
 
 	for i in allShows:
-		with open(database, 'rt') as f:
-			tree = ET.parse(f)
-			for node in tree.findall('.//item'):
-				raw_torrent_title = node.find('title').text
-				raw_link = node.find('link').tail
-				raw_pubDate = node.find('pubdate').text
+		for sets in torrents:
+			for indValues in sets:
+				torrent_title = indValues.get(fileNameKey)
 
-				torrent_title = raw_torrent_title.strip()
-				link = raw_link.strip()
+				magnet = indValues.get(magnetKey)
+				magnet = magnet.strip()
+				magnet = magnet.replace("&amp", "")
+				magnet = magnet.replace(";tr", "&tr")
+				magnet = magnet.replace("dn", "&dn")
+				magnet = magnet.replace(";", "")
 
 				if("720p" in torrent_title): # contains 720p
 					regex = r"^.*.S\d\d"
@@ -85,35 +126,37 @@ try:
 					season = seasonAndEpisodeNumbers[:1]
 					episode = seasonAndEpisodeNumbers[1:]
 
-					print "i.title:", str(i.title)[9:]
-					print "title:", title.strip()
+					# try:
+						# print title.strip() + " - " + 'S' + season[0] + 'E' + episode[0] + ".mkv"
+					# except:
+						# print "unable to title, shitty scene groups"
 
-					#if(str(i.title)[9:].lower() == title.lower() and episode > i.last_watched_episode):
 					if(fuzz.ratio(str(i.title)[9:].lower(), title.lower()) > 70 and episode > i.last_watched_episode):
 						print "Matched"
-
 						regex = r"id=.*.="
-						preTid = re.findall(regex, link)
-						preTid = str(preTid)
-						tid = preTid[5:-3]
 
 						dledShowsFile = open('dledshows', 'a+')
 						alreadyDLShows = dledShowsFile.read().split("\n")
 
 						epititle = episode[0]+title
 						if epititle not in alreadyDLShows:
-							req = urllib2.Request(link, None)
-							req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36')
-							response = urllib2.urlopen(req)
+							fileWithQuotes = '"' + title.strip() + " - " + 'S' + season[0] + 'E' + episode[0] + ".torrent" + '"'
+							command = "python Magnet_To_Torrent2.py -m " + '"' + magnet + '"' + " -o " + fileWithQuotes
+							os.system(command)
 
-							print settings['System Settings']['watch_dir']
+							command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
+							os.system(command)
 
-							torrentFile = open(settings['System Settings']['watch_dir']+tid+".torrent", "w")
-							torrentFile.write(response.read())
-							torrentFile.close()
-							dledShowsFile.write(episode[0]+title+'\n')
+							dledShowsFile.write(epititle+'\n')
 
 						dledShowsFile.close()
 
-except urllib2.HTTPError,err:
-	print err
+settings = readJson()
+os.chdir(settings['System Settings']['script_location'])
+
+database = "RarBG" + ".json"
+allShows = []
+
+token = getToken()
+searchTVTorrents(token, database)
+compare(allShows, settings)
