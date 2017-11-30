@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 import json
 from collections import OrderedDict
 
@@ -10,6 +11,7 @@ def readJson():
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
+os.chdir("./ani-script")
 settings = readJson()
 os.chdir(settings['System Settings']['script_location'])
 
