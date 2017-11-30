@@ -51,7 +51,7 @@ def sync (x, hashed, settings, seriesName, episode, filename, userList, custom_t
 				for element in alt_title:
 					if found == "false":
 						# if title == seriesName or element == seriesName:
-						if (fuzz.ratio(title, seriesName) > 70 or fuzz.ratio(element, seriesName)):
+						if (fuzz.ratio(title, seriesName) > 70 or fuzz.ratio(element, seriesName) > 70):
 							found = "true"
 
         if x == 0:
@@ -74,14 +74,14 @@ def sync (x, hashed, settings, seriesName, episode, filename, userList, custom_t
 					command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + "'" + " \"" + filePath + "\"" + ' ' + "\"" + settings['Users']['Smoothtalk']['remote_host'] + ":" + settings['Users']['Smoothtalk']['remote_download_dir'] + "\""
 					process = subprocess.check_call(command, shell=True)
 					command = "ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + ' ' + settings['Users']['Smoothtalk']['remote_host'] +  " \"mv '" + settings['Users']['Smoothtalk']['remote_download_dir'] +  sys.argv[3] + "' '" + settings['Users']['Smoothtalk']['remote_download_dir'] + filename + "'\""
-					#process = subprocess.check_call(command, shell=True)
+					process = subprocess.check_call(command, shell=True)
 				elif x == 1:
 					found = "true"
 					print "Kan"
 					command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['shinigamibob']['remote_port'] + "'" + " \"" + filePath + "\"" + ' ' + "\"" + settings['Users']['shinigamibob']['remote_host'] + ":" + settings['Users']['shinigamibob']['remote_download_dir'] + "\""
 					process =  subprocess.check_call(command, shell=True)
 					command = "ssh -p" + settings['Users']['shinigamibob']['remote_port'] + ' ' + settings['Users']['shinigamibob']['remote_host'] +  " \"mv '" + settings['Users']['shinigamibob']['remote_download_dir'] + sys.argv[3] + "' '" + settings['Users']['shinigamibob']['remote_download_dir'] + filename + "'\""
-					#process = subprocess.check_call(command, shell=True)
+					process = subprocess.check_call(command, shell=True)
 
 				if hashed == 0:
 					os.chdir(settings['System Settings']['script_location'])

@@ -47,3 +47,4 @@ flags
 oldcommand.sh
 tidfile
 torrentFlags
+fuzzytest.py
