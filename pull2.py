@@ -157,7 +157,7 @@ for i in matches:
 		command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
 		os.system(command)
 
-		command = "mv " + fileWithQuotes + ' ' + "../../downloads/watch/"
+		command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
 		os.system(command)
 		tidfile.write(tid+"\n")
 
