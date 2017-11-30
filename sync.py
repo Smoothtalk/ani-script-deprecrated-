@@ -5,6 +5,8 @@ import os
 import retMal
 import linecache
 import json
+import time
+import subprocess
 import xml.etree.ElementTree as ET
 import multiprocessing
 from multiprocessing import Process
@@ -65,33 +67,35 @@ def sync (x, hashed, settings, seriesName, episode, filename, userList, custom_t
 
         if found == "true":
             if episode > int(my_watched_episodes):
-                if x == 0:
-                    found = "true"
-                    command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + "'" + " \"" + filePath + "\"" + ' ' + "\"" + settings['Users']['Smoothtalk']['remote_host'] + ":" + settings['Users']['Smoothtalk']['remote_download_dir'] + "\""
-                    print command
-                    os.system(command)
-                    command = "ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + ' ' + settings['Users']['Smoothtalk']['remote_host'] +  " \"mv '" + settings['Users']['Smoothtalk']['remote_download_dir'] +  sys.argv[3] + "' '" + settings['Users']['Smoothtalk']['remote_download_dir'] + filename + "'\""
-                    os.system(command)
-                elif x == 1:
-                    found = "true"
-                    command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['shinigamibob']['remote_port'] + "'" + " \"" + filePath + "\"" + ' ' + "\"" + settings['Users']['shinigamibob']['remote_host'] + ":" + settings['Users']['shinigamibob']['remote_download_dir'] + "\""
-                    os.system(command)
-                    command = "ssh -p" + settings['Users']['shinigamibob']['remote_port'] + ' ' + settings['Users']['shinigamibob']['remote_host'] +  " \"mv '" + settings['Users']['shinigamibob']['remote_download_dir'] + sys.argv[3] + "' '" + settings['Users']['shinigamibob']['remote_download_dir'] + filename + "'\""
-                    os.system(command)
+
+		if x == 0:
+			found = "true"
+			command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + "'" + " \"" + filePath + "\"" + ' ' + "\"" + settings['Users']['Smoothtalk']['remote_host'] + ":" + settings['Users']['Smoothtalk']['remote_download_dir'] + "\""
+			process = subprocess.check_call(command, shell=True)
+			command = "ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + ' ' + settings['Users']['Smoothtalk']['remote_host'] +  " \"mv '" + settings['Users']['Smoothtalk']['remote_download_dir'] +  sys.argv[3] + "' '" + settings['Users']['Smoothtalk']['remote_download_dir'] + filename + "'\""
+			#process = subprocess.check_call(command, shell=True)
+		elif x == 1:
+			found = "true"
+			print "Kan"
+			command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['shinigamibob']['remote_port'] + "'" + " \"" + filePath + "\"" + ' ' + "\"" + settings['Users']['shinigamibob']['remote_host'] + ":" + settings['Users']['shinigamibob']['remote_download_dir'] + "\""
+			process =  subprocess.check_call(command, shell=True)
+			command = "ssh -p" + settings['Users']['shinigamibob']['remote_port'] + ' ' + settings['Users']['shinigamibob']['remote_host'] +  " \"mv '" + settings['Users']['shinigamibob']['remote_download_dir'] + sys.argv[3] + "' '" + settings['Users']['shinigamibob']['remote_download_dir'] + filename + "'\""
+			# subprocess.call(command, shell=True)
+
+		if hashed == 0:
+			os.chdir(settings['System Settings']['script_location'])
+            completed = open("completed.txt", "a")
+            completed.write(hash)
+            completed.write('\n')
+            completed.close()
+            hashed = 1
+        elif x == 1:
             if hashed == 0:
                 os.chdir(settings['System Settings']['script_location'])
                 completed = open("completed.txt", "a")
                 completed.write(hash)
                 completed.write('\n')
                 completed.close()
-                hashed = 1
-            elif x == 1:
-                if hashed == 0:
-                    os.chdir(settings['System Settings']['script_location'])
-                    completed = open("completed.txt", "a")
-                    completed.write(hash)
-                    completed.write('\n')
-                    completed.close()
 
 	os.system(command)
     return
