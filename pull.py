@@ -73,7 +73,7 @@ def compare(allShows, settings):
 	fileNameKey = "filename"
 	magnetKey = "download"
 
-	my = User(settings['Users']['Smoothtalk']['trUserName'])
+	my = User(settings['Users']['Smoothtalk']['traktUserName'])
 
 	for y in range(len(my.watched_shows)):
 		dict = my.watched_shows[y].seasons[-1]
