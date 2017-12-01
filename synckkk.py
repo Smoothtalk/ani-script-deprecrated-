@@ -91,8 +91,6 @@ def sync(x, settings, User, TvShow, re, traceback, filePath, glob, fileHash):
 			innerFileName = file
 
 		for a in allShows:
-			print str(a.title)[9:].lower()
-			print title.lower()
 			if(fuzz.ratio(str(a.title)[9:].lower(), title.lower()) > 70):
 				filename = title + " - " + 'S' + season[0] + 'E' + episode[0] +".mkv"
 				command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + settings['Users']['Smoothtalk']['remote_host'] + ":" + settings['Users']['Smoothtalk']['remote_download_dir'] + "\""
