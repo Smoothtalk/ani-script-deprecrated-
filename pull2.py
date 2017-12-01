@@ -82,7 +82,7 @@ for x in range(0,(len(userList))):
 			if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
 				allShows.append(tempAnime)
 			elif series_status == "2":
-				if (lastWeek <= seriesEnd <= currDate): #series_end is within a week of today's date
+				if (lastWeek <= seriesEnd <= currDate): #TODO FIX THIS #series_end is within a week of today's date
 					allShows.append(tempAnime)
 
 print len(allShows)
@@ -139,7 +139,7 @@ hsReleases = hsFeed.get('entries') #list of all releases
 matches = []
 for i in hsReleases:
 	for j in truncShows:
-		if j in i.title: #match user shows to hs torrent title. update required to match against alt titles as well
+		if j in i.title: #match user shows to hs torrent title. update required to match against alt titles as well #TODO add fuzzy check
 			if len(j) != 1: #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
 				matches.append(i) #it matches any anime title with 'k' in it
 
