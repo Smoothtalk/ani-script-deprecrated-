@@ -97,7 +97,7 @@ def sync(x, settings, User, TvShow, re, traceback, filePath, glob, fileHash):
 				os.system(command)
 				command = "ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + ' ' + settings['Users']['Smoothtalk']['remote_host'] +  " \"mv '" + settings['Users']['Smoothtalk']['remote_download_dir'] + innerFileName + "' '" + settings['Users']['Smoothtalk']['remote_download_dir'] + filename + "'\""
 				os.system(command)
-				command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + "0"
+				command = "python3.5 discordAnnounce.py \'" + sys.argv[2] + '\' ' + "0"
 				process = subprocess.call(command, shell=True)
 				os.chdir(settings['System Settings']['script_location'])
 				completed = open("completed.txt", "a")
