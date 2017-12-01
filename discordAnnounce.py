@@ -20,7 +20,7 @@ async def announce():
     await discordClient.wait_until_ready()
     settings = readJson()
 
-    messagePayload = "``" + str(sys.argv[1]) + " successfully synced" + "``"
+    messagePayload = "```" + str(sys.argv[1]) + " successfully synced" + "```"
 
     if(sys.argv[2] == "0"):
         messageRecipient = await discordClient.get_user_info(settings['Users']['Smoothtalk']['discord_ID'])
