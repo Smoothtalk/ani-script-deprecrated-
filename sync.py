@@ -67,7 +67,7 @@ def sync (x, hashed, settings, seriesName, episode, filename, userList, custom_t
                 found = "true"
             index+=1;
 
-        if found == "true":
+        if found == "true" or (x == 0 and seriesName == 'Ame-con!!'):
             if episode > int(my_watched_episodes):
 				if x == 0:
 					found = "true"
@@ -75,6 +75,15 @@ def sync (x, hashed, settings, seriesName, episode, filename, userList, custom_t
 					process = subprocess.check_call(command, shell=True)
 					command = "ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + ' ' + settings['Users']['Smoothtalk']['remote_host'] +  " \"mv '" + settings['Users']['Smoothtalk']['remote_download_dir'] +  sys.argv[3] + "' '" + settings['Users']['Smoothtalk']['remote_download_dir'] + filename + "'\""
 					process = subprocess.check_call(command, shell=True)
+					command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + "0"
+					process = subprocess.call(command, shell=True)
+					if hashed == 0:
+						os.chdir(settings['System Settings']['script_location'])
+						completed = open("completed.txt", "a")
+						completed.write(hash)
+						completed.write('\n')
+						completed.close()
+						hashed = 1
 				elif x == 1:
 					found = "true"
 					print "Kan"
@@ -82,21 +91,16 @@ def sync (x, hashed, settings, seriesName, episode, filename, userList, custom_t
 					process =  subprocess.check_call(command, shell=True)
 					command = "ssh -p" + settings['Users']['shinigamibob']['remote_port'] + ' ' + settings['Users']['shinigamibob']['remote_host'] +  " \"mv '" + settings['Users']['shinigamibob']['remote_download_dir'] + sys.argv[3] + "' '" + settings['Users']['shinigamibob']['remote_download_dir'] + filename + "'\""
 					process = subprocess.check_call(command, shell=True)
-
-				if hashed == 0:
-					os.chdir(settings['System Settings']['script_location'])
-					completed = open("completed.txt", "a")
-					completed.write(hash)
-					completed.write('\n')
-					completed.close()
-					hashed = 1
-				elif x == 1:
+					command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + "1"
+					process = subprocess.call(command, shell=True)
 					if hashed == 0:
 						os.chdir(settings['System Settings']['script_location'])
 						completed = open("completed.txt", "a")
 						completed.write(hash)
 						completed.write('\n')
 						completed.close()
+						hashed = 1
+
 	return
 
 if __name__=='__main__':
@@ -127,7 +131,7 @@ if __name__=='__main__':
     userList = settings['Users'].keys()
 
     if "downloads/Anime" not in path:
-        sys.exit()
+        sys.exit(1)
 
     jobs = []
     for x in range(len(settings['Users'])):
