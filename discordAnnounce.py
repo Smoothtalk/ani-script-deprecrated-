@@ -20,12 +20,14 @@ async def announce():
     await discordClient.wait_until_ready()
     settings = readJson()
 
+    messagePayload = "``" + str(sys.argv[1]) + " successfully synced" + "``"
+
     if(sys.argv[2] == "0"):
         messageRecipient = await discordClient.get_user_info(settings['Users']['Smoothtalk']['discord_ID'])
-        await discordClient.send_message(messageRecipient, str(sys.argv[1]) + " successfully synced")
+        await discordClient.send_message(messageRecipient, messagePayload)
     elif(sys.argv[2] == "1"):
         messageRecipient = await discordClient.get_user_info(settings['Users']['shinigamibob']['discord_ID'])
-        await discordClient.send_message(messageRecipient, str(sys.argv[1]) + " successfully synced")
+        await discordClient.send_message(messageRecipient, messagePayload)
     else:
         pass
 
