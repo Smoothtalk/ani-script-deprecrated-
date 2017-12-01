@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 import multiprocessing
 import traceback
 from trakt.users import User
+from fuzzywuzzy import fuzz
 from multiprocessing import Process
 from collections import OrderedDict
 
@@ -63,13 +64,13 @@ def sync(x, settings, User, TvShow, re, traceback, filePath, glob, fileHash):
 
 	#title from torrent
 	regex = r"^.*.S\d\d"
-	preTitle = re.findall(regex, sys.argv[1], re.IGNORECASE)
+	preTitle = re.findall(regex, sys.argv[2], re.IGNORECASE)
 	preTitle = str(preTitle)
 	preTitle = preTitle[2:-6]
 	title = preTitle.replace('.',' ')
 
 	regex = r"S\d\dE\d\d"
-	tempSandE = str(re.findall(regex, sys.argv[1], re.IGNORECASE))
+	tempSandE = str(re.findall(regex, sys.argv[2], re.IGNORECASE))
 
 	regex = r"\d\d"
 	seasonAndEpisodeNumbers = re.findall(regex, tempSandE)
@@ -90,7 +91,9 @@ def sync(x, settings, User, TvShow, re, traceback, filePath, glob, fileHash):
 			innerFileName = file
 
 		for a in allShows:
-			if(str(a.title)[9:].lower().split()[:2] == title.lower().split()[:2]):
+			print str(a.title)[9:].lower()
+			print title.lower()
+			if(fuzz.ratio(str(a.title)[9:].lower(), title.lower()) > 70):
 				filename = title + " - " + 'S' + season[0] + 'E' + episode[0] +".mkv"
 				command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + settings['Users']['Smoothtalk']['remote_host'] + ":" + settings['Users']['Smoothtalk']['remote_download_dir'] + "\""
 				os.system(command)
@@ -108,7 +111,7 @@ def sync(x, settings, User, TvShow, re, traceback, filePath, glob, fileHash):
 		# traceback.print_stack()
 
 settings = readJson()
-filePath = settings['System Settings']['host_download_dir'] + sys.argv[1]
+filePath = sys.argv[1]
 hdd = settings['System Settings']['host_download_dir']
 fileHash = sys.argv[2]
 sync(0, settings, User, TvShow, re, traceback, filePath, glob, fileHash)
