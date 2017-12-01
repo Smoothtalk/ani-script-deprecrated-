@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#python synckkk.py "/home/seedbox/downloads/Anime/Tosh.0.S09E01.720p.HDTV.x264-MiNDTHEGAP[rarbg]" "Tosh.0.S09E01.720p.HDTV.x264-MiNDTHEGAP[rarbg]"
+
 import sys
 import os
 import linecache
@@ -96,21 +96,19 @@ def sync(x, settings, User, TvShow, re, traceback, filePath, glob, fileHash):
 				os.system(command)
 				command = "ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + ' ' + settings['Users']['Smoothtalk']['remote_host'] +  " \"mv '" + settings['Users']['Smoothtalk']['remote_download_dir'] + innerFileName + "' '" + settings['Users']['Smoothtalk']['remote_download_dir'] + filename + "'\""
 				os.system(command)
-
+				command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + "0"
+				process = subprocess.call(command, shell=True)
 				os.chdir(settings['System Settings']['script_location'])
 				completed = open("completed.txt", "a")
 				completed.write(fileHash)
 				completed.write('\n')
 				completed.close()
 	except:
-		traceback.print_stack()
-
+		sys.exit(1)
+		# traceback.print_stack()
 
 settings = readJson()
 filePath = settings['System Settings']['host_download_dir'] + sys.argv[1]
 hdd = settings['System Settings']['host_download_dir']
 fileHash = sys.argv[2]
 sync(0, settings, User, TvShow, re, traceback, filePath, glob, fileHash)
-
-#if hdd[6:-1] not in path:
-	#sys.exit()
