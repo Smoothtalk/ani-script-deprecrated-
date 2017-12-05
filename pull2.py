@@ -8,6 +8,7 @@ import datetime
 import urllib
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+from fuzzywuzzy import fuzz
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -16,6 +17,13 @@ def readJson():
 	json_data=open("vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
+
+def getAnimeSeriesTitle(fileName):
+	tempName = fileName.replace("_", " ")
+	firstHyphen = tempName.rfind(' - ')
+	firstCBrac = tempName.index(']', 0)
+	seriesName = tempName[firstCBrac+2:firstHyphen]
+	return seriesName
 
 settings = readJson()
 
@@ -90,12 +98,12 @@ allShows = list(set(allShows)) #should have a list of unique shows from both use
 
 #adds the special titles from vars.py, clears tempanime and index before loops
 #because technology is weird
-index = 0
-tempAnime = anime();
-
 #since below these loops you are checking whether the first two words are matching
 #check if against the custom_title in vars.py and if the first two words of a title match
 #it is considered a dupe
+index = 0
+tempAnime = anime();
+
 while index < len(customTitleListA):
 	tempAnime = anime()
 	dupe = "false"
@@ -120,28 +128,27 @@ while index < len(customTitleListK):
 		allShows.append(tempAnime)
 	index+=1;
 
-truncShows = []
-for i in allShows:
-  truncShows.append(' '.join(i.title.split()[:2])) #gets the first two words in the title for easier processing
-
-#for i in truncShows:
-#s	print i.encode('utf-8').strip()
+# truncShows = []
+# for i in allShows:
+#   truncShows.append(' '.join(i.title.split())) #cleans up the list
 
 print len(allShows)
 hsFeed = feedparser.parse('http://horriblesubs.info/rss.php?res=720')
 hsReleases = hsFeed.get('entries') #list of all releases
 
-#for i in hsReleases:
-#	title = i['title']
-#	magnetLink = i['links'][0]['href']
-#	guid = str(magnetLink[20:52])
-
 matches = []
 for i in hsReleases:
-	for j in truncShows:
-		if j in i.title: #match user shows to hs torrent title. update required to match against alt titles as well #TODO add fuzzy check
-			if len(j) != 1: #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
+	for j in allShows:
+		#if j in i.title: #match user shows to hs torrent title. update required to match against alt titles as well #TODO add fuzzy check
+		seriesTitle = getAnimeSeriesTitle(i.title)
+		if(fuzz.ratio(j.title.decode('utf-8'), seriesTitle) > 70):
+			if (len(j.title) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
 				matches.append(i) #it matches any anime title with 'k' in it
+		elif(len(j.alt_titles) > 0):
+			for k in j.alt_titles:
+				if(fuzz.ratio(k.decode('utf-8'), seriesTitle) > 70):
+					matches.append(i)
+					pass
 
 tidfile = open('tidfile', 'a+') #stores torrent tids so that they wont download again
 existingTIDs = tidfile.read().split("\n")
@@ -152,14 +159,14 @@ for i in matches:
 	url = i.link
 	tid = str(url[20:52]) #get tid from torrent url
 
-	if tid not in existingTIDs: #if tid doesn't already exist, download
-		fileWithQuotes = '"' + title + ".torrent" + '"'
-		command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
-		os.system(command)
-
-		command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
-		os.system(command)
-		tidfile.write(tid+"\n")
+	# if tid not in existingTIDs: #if tid doesn't already exist, download
+	# 	fileWithQuotes = '"' + title + ".torrent" + '"'
+	# 	command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
+	# 	os.system(command)
+    #
+	# 	command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
+	# 	os.system(command)
+	# 	tidfile.write(tid+"\n")
 
 tidfile.close()
 print len(matches)
