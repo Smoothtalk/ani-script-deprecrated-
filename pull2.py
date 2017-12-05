@@ -10,6 +10,9 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from fuzzywuzzy import fuzz
 
+HS_URL = 'http://horriblesubs.info/rss.php?res=720'
+FUZZ_RATIO = 70
+
 #anime object to store relevant deets
 class userClass():
 	userName = None
@@ -32,7 +35,7 @@ def readJson():
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
-def getAnimeSeriesTitle(fileName):
+def getSeriesTitle(fileName):
 	tempName = fileName.replace("_", " ")
 	firstHyphen = tempName.rfind(' - ')
 	firstCBrac = tempName.index(']', 0)
@@ -47,7 +50,6 @@ def pullMALUserData(userList):
 def checkDupes(animeTitle, showList):
 	allTitle = []
 	for show in showList:
-
 		allTitle.append(show.title)
 		for altTitle in show.alt_titles:
 			allTitle.append(allTitle)
@@ -62,7 +64,6 @@ def generateUserObjects(users):
 	index = 0
 
 	for user in users:
-		#print users[user]
 		newUser = userClass()
 		newUser.userName = user
 		newUser.Custom_Titles = users[user]['custom_titles']
@@ -70,6 +71,97 @@ def generateUserObjects(users):
 		userList.append(newUser)
 
 	return userList
+
+def getAllUniqueMALShows(users):
+	allShows = [] #holds all watching and plan to watch shows
+	currDate = datetime.datetime.today()
+	lastWeek = currDate - datetime.timedelta(days=7)
+
+	for user in users:
+		with open(user.dataBaseFileName, 'rt') as f:
+			tree = ET.parse(f)
+
+		for node in tree.findall('.//anime'):
+			raw_status = node.find('my_status').text
+			status = raw_status.strip()
+			#user's series status: 1 == watching, 2 == completed, 6 == plan to watch
+			if (status == '1' or status == '6'):
+				show_id = node.find('series_animedb_id').text.strip()
+				raw_title = node.find('series_title').text
+				raw_alt_title = node.find('series_synonyms').text #this is a list
+				series_status = node.find('series_status').text.strip()
+				series_end_date = node.find('series_end').text.strip()
+				raw_my_watched_episodes = node.find('my_watched_episodes').text
+				my_watched_episodes = raw_my_watched_episodes.strip()
+
+				title = raw_title.strip()
+				alt_title_unsplit = raw_alt_title.strip()
+				alt_title = alt_title_unsplit.split('; ')
+				if alt_title[0] == "" :#and len(alt_title) > 1:
+					alt_title.remove('')
+
+				if ('-00' not in series_end_date):
+					seriesEnd = datetime.datetime.strptime(series_end_date, '%Y-%m-%d') #conversion from string to datetime
+
+				tempAnime = anime()
+				tempAnime.show_id = show_id
+				tempAnime.title = title
+				tempAnime.alt_titles = alt_title
+				tempAnime.last_watched = my_watched_episodes
+				tempAnime.status = series_status
+				if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
+					allShows.append(tempAnime)
+				elif series_status == "2":
+					if (lastWeek <= seriesEnd <= currDate): #TODO FIX THIS #series_end is within a week of today's date
+						allShows.append(tempAnime)
+
+		#add custom titles here
+		for altTitle in user.Custom_Titles:
+			tempAnime = anime()
+			tempAnime.title = altTitle.strip()
+			if(checkDupes(tempAnime.title, allShows)):
+				allShows.append(tempAnime)
+
+	print "Length of all shows(dupes included): " + str(len(allShows))
+	allShows = list(set(allShows)) #Removes dupes from list
+	print "Length of all shows(incl custom title, no dupes): " + str(len(allShows))
+	return allShows
+
+def getMatches(releases, allShows):
+	matches = []
+	for release in releases:
+		seriesTitle = getSeriesTitle(release.title)
+		for malShow in allShows:
+			if(fuzz.ratio(malShow.title.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
+				if (len(malShow.title) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
+					matches.append(release) #it matches any anime title with 'k' in it
+			elif(len(malShow.alt_titles) > 0):
+				for altTitle in malShow.alt_titles:
+					if(fuzz.ratio(altTitle.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
+						matches.append(release)
+						pass
+	return matches
+
+def addMatches(matches):
+	tidfile = open('tidfile', 'a+') #stores torrent tids so that they wont download again
+	existingTIDs = tidfile.read().split("\n")
+
+	for matchedShow in matches:
+		print matchedShow.title
+		title = matchedShow.title
+		url = matchedShow.link
+		tid = str(url[20:52]) #get tid from torrent url
+
+		# if tid not in existingTIDs: #if tid doesn't already exist, download
+		# 	fileWithQuotes = '"' + title + ".torrent" + '"'
+		# 	command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
+		# 	os.system(command)
+	    #
+		# 	command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
+		# 	os.system(command)
+		# 	tidfile.write(tid+"\n")
+
+	tidfile.close()
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -79,99 +171,14 @@ settingsUsers = settings['Users'].keys()
 
 #pull updated user list from Mal. not /really/ required, but w/e
 pullMALUserData(settingsUsers)
-
 users = generateUserObjects(settings['Users'])
+allShows = getAllUniqueMALShows(users)
 
-customTitleListA = settings['Users']['Smoothtalk']['custom_titles']
-customTitleListK = settings['Users']['shinigamibob']['custom_titles']
-
-currDate = datetime.datetime.today()
-lastWeek = currDate - datetime.timedelta(days=7)
-
-allShows = [] #holds all watching and plan to watch shows
-for user in users:
-	with open(user.dataBaseFileName, 'rt') as f:
-		tree = ET.parse(f)
-
-	for node in tree.findall('.//anime'):
-		raw_status = node.find('my_status').text
-		status = raw_status.strip()
-		#user's series status: 1 == watching, 2 == completed, 6 == plan to watch
-		if (status == '1' or status == '6'):
-			show_id = node.find('series_animedb_id').text.strip()
-			raw_title = node.find('series_title').text
-			raw_alt_title = node.find('series_synonyms').text #this is a list
-			series_status = node.find('series_status').text.strip()
-			series_end_date = node.find('series_end').text.strip()
-			raw_my_watched_episodes = node.find('my_watched_episodes').text
-			my_watched_episodes = raw_my_watched_episodes.strip()
-
-			title = raw_title.strip()
-			alt_title_unsplit = raw_alt_title.strip()
-			alt_title = alt_title_unsplit.split('; ')
-			if alt_title[0] == "" :#and len(alt_title) > 1:
-				alt_title.remove('')
-
-			if ('-00' not in series_end_date):
-				seriesEnd = datetime.datetime.strptime(series_end_date, '%Y-%m-%d') #conversion from string to datetime
-
-			tempAnime = anime()
-			tempAnime.show_id = show_id
-			tempAnime.title = title
-			tempAnime.alt_titles = alt_title
-			tempAnime.last_watched = my_watched_episodes
-			tempAnime.status = series_status
-			if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
-				allShows.append(tempAnime)
-			elif series_status == "2":
-				if (lastWeek <= seriesEnd <= currDate): #TODO FIX THIS #series_end is within a week of today's date
-					allShows.append(tempAnime)
-
-	#add custom titles here
-	for altTitle in user.Custom_Titles:
-		tempAnime = anime()
-		tempAnime.title = altTitle.strip()
-		if(checkDupes(tempAnime.title, allShows)):
-			allShows.append(tempAnime)
-
-print "Length of all shows(dupes included): " + str(len(allShows))
-allShows = list(set(allShows)) #Removes dupes from list
-print "Length of all shows(incl custom title, no dupes): " + str(len(allShows))
-
-hsFeed = feedparser.parse('http://horriblesubs.info/rss.php?res=720')
+hsFeed = feedparser.parse(HS_URL)
 hsReleases = hsFeed.get('entries') #list of all releases
 
-matches = []
-for i in hsReleases:
-	for j in allShows:
-		#if j in i.title: #match user shows to hs torrent title. update required to match against alt titles as well #TODO add fuzzy check
-		seriesTitle = getAnimeSeriesTitle(i.title)
-		if(fuzz.ratio(j.title.decode('utf-8'), seriesTitle) > 70 or seriesTitle == "aaa"):
-			if (len(j.title) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
-				matches.append(i) #it matches any anime title with 'k' in it
-		elif(len(j.alt_titles) > 0):
-			for k in j.alt_titles:
-				if(fuzz.ratio(k.decode('utf-8'), seriesTitle) > 70):
-					matches.append(i)
-					pass
+matches = getMatches(hsReleases, allShows)
 
-tidfile = open('tidfile', 'a+') #stores torrent tids so that they wont download again
-existingTIDs = tidfile.read().split("\n")
+addMatches(matches)
 
-for i in matches:
-	print i.title
-	title = i.title
-	url = i.link
-	tid = str(url[20:52]) #get tid from torrent url
-
-	# if tid not in existingTIDs: #if tid doesn't already exist, download
-	# 	fileWithQuotes = '"' + title + ".torrent" + '"'
-	# 	command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
-	# 	os.system(command)
-    #
-	# 	command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
-	# 	os.system(command)
-	# 	tidfile.write(tid+"\n")
-
-tidfile.close()
 print "Length of matches: " + str(len(matches))
