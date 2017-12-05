@@ -10,7 +10,6 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from fuzzywuzzy import fuzz
 
-HS_URL = 'http://horriblesubs.info/rss.php?res=720'
 FUZZ_RATIO = 70
 
 #anime object to store relevant deets
@@ -61,7 +60,6 @@ def checkDupes(animeTitle, showList):
 
 def generateUserObjects(users):
 	userList = []
-	index = 0
 
 	for user in users:
 		newUser = userClass()
@@ -163,6 +161,14 @@ def addMatches(matches):
 
 	tidfile.close()
 
+def getFeeds(Rss_Feeds):
+	feedList = []
+
+	for feed in Rss_Feeds:
+		feedList.append(Rss_Feeds[feed])
+
+	return feedList
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -171,13 +177,16 @@ settingsUsers = settings['Users'].keys()
 
 #pull updated user list from Mal. not /really/ required, but w/e
 pullMALUserData(settingsUsers)
-users = generateUserObjects(settings['Users'])
-allShows = getAllUniqueMALShows(users)
+userObjects = generateUserObjects(settings['Users'])
+allShows = getAllUniqueMALShows(userObjects)
+feedUrls = getFeeds(settings['Rss Feeds'])
 
-hsFeed = feedparser.parse(HS_URL)
-hsReleases = hsFeed.get('entries') #list of all releases
-
-matches = getMatches(hsReleases, allShows)
+matches = []
+for url in feedUrls:
+	if(url != ""):
+		feed = feedparser.parse(url)
+		releases = feed.get('entries')
+		matches = getMatches(releases, allShows)
 
 addMatches(matches)
 
