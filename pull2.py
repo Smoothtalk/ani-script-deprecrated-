@@ -10,8 +10,22 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from fuzzywuzzy import fuzz
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
+#anime object to store relevant deets
+class userClass():
+	userName = None
+	Custom_Titles = []
+	dataBaseFileName = None
+
+class anime():
+	show_id = None
+	title = None
+	alt_titles = []
+	status = None
+	last_watched = None
+	def __eq__(self, other):
+		return self.show_id == other.show_id
+	def __hash__(self):
+		return hash(self.show_id)
 
 def readJson():
 	json_data=open("vars.json").read()
@@ -25,27 +39,48 @@ def getAnimeSeriesTitle(fileName):
 	seriesName = tempName[firstCBrac+2:firstHyphen]
 	return seriesName
 
+def pullMALUserData(userList):
+	for user in userList:
+		command = "python retMal.py " + '\"' + user + '\"'
+		os.system(command)
+
+def checkDupes(animeTitle, showList):
+	allTitle = []
+	for show in showList:
+
+		allTitle.append(show.title)
+		for altTitle in show.alt_titles:
+			allTitle.append(allTitle)
+
+	if(animeTitle not in allTitle):
+		return True
+	else:
+		return False
+
+def generateUserObjects(users):
+	userList = []
+	index = 0
+
+	for user in users:
+		#print users[user]
+		newUser = userClass()
+		newUser.userName = user
+		newUser.Custom_Titles = users[user]['custom_titles']
+		newUser.dataBaseFileName = user + ".xml"
+		userList.append(newUser)
+
+	return userList
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 settings = readJson()
+settingsUsers = settings['Users'].keys()
 
-#anime object to store relevant deets
-class anime():
-	show_id = -1
-	title = ""
-	alt_titles = []
-	last_dl = -1
-	status = -1
-	last_watched = -1
-	def __eq__(self, other):
-		return self.show_id == other.show_id
-	def __hash__(self):
-		return hash(self.show_id)
-
-userList = settings['Users'].keys()
 #pull updated user list from Mal. not /really/ required, but w/e
-command = "python retMal.py " + '\"' + userList[0] + '\"'
-os.system(command)
-command = "python retMal.py " + '\"' + userList[1] + '\"'
-os.system(command)
+pullMALUserData(settingsUsers)
+
+users = generateUserObjects(settings['Users'])
 
 customTitleListA = settings['Users']['Smoothtalk']['custom_titles']
 customTitleListK = settings['Users']['shinigamibob']['custom_titles']
@@ -54,9 +89,8 @@ currDate = datetime.datetime.today()
 lastWeek = currDate - datetime.timedelta(days=7)
 
 allShows = [] #holds all watching and plan to watch shows
-for x in range(0,(len(userList))):
-	database = userList[x] + ".xml"
-	with open(database, 'rt') as f:
+for user in users:
+	with open(user.dataBaseFileName, 'rt') as f:
 		tree = ET.parse(f)
 
 	for node in tree.findall('.//anime'):
@@ -93,46 +127,17 @@ for x in range(0,(len(userList))):
 				if (lastWeek <= seriesEnd <= currDate): #TODO FIX THIS #series_end is within a week of today's date
 					allShows.append(tempAnime)
 
-print len(allShows)
-allShows = list(set(allShows)) #should have a list of unique shows from both users
+	#add custom titles here
+	for altTitle in user.Custom_Titles:
+		tempAnime = anime()
+		tempAnime.title = altTitle.strip()
+		if(checkDupes(tempAnime.title, allShows)):
+			allShows.append(tempAnime)
 
-#adds the special titles from vars.py, clears tempanime and index before loops
-#because technology is weird
-#since below these loops you are checking whether the first two words are matching
-#check if against the custom_title in vars.py and if the first two words of a title match
-#it is considered a dupe
-index = 0
-tempAnime = anime();
+print "Length of all shows(dupes included): " + str(len(allShows))
+allShows = list(set(allShows)) #Removes dupes from list
+print "Length of all shows(incl custom title, no dupes): " + str(len(allShows))
 
-while index < len(customTitleListA):
-	tempAnime = anime()
-	dupe = "false"
-	tempAnime.title = customTitleListA[index].strip()
-	for i in allShows:
-		if i.title.split()[:2] == tempAnime.title.split()[:2]:
-			dupe = "true"
-	if dupe == "false":
-		allShows.append(tempAnime)
-	index+=1;
-
-index = 0
-tempAnime = anime();
-while index < len(customTitleListK):
-	tempAnime = anime()
-	dupe = "false"
-	tempAnime.title = customTitleListK[index].strip()
-	for i in allShows:
-		if i.title.split()[:2] == tempAnime.title.split()[:2]:
-			dupe = "true"
-	if dupe == "false":
-		allShows.append(tempAnime)
-	index+=1;
-
-# truncShows = []
-# for i in allShows:
-#   truncShows.append(' '.join(i.title.split())) #cleans up the list
-
-print len(allShows)
 hsFeed = feedparser.parse('http://horriblesubs.info/rss.php?res=720')
 hsReleases = hsFeed.get('entries') #list of all releases
 
@@ -141,7 +146,7 @@ for i in hsReleases:
 	for j in allShows:
 		#if j in i.title: #match user shows to hs torrent title. update required to match against alt titles as well #TODO add fuzzy check
 		seriesTitle = getAnimeSeriesTitle(i.title)
-		if(fuzz.ratio(j.title.decode('utf-8'), seriesTitle) > 70):
+		if(fuzz.ratio(j.title.decode('utf-8'), seriesTitle) > 70 or seriesTitle == "aaa"):
 			if (len(j.title) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
 				matches.append(i) #it matches any anime title with 'k' in it
 		elif(len(j.alt_titles) > 0):
@@ -169,4 +174,4 @@ for i in matches:
 	# 	tidfile.write(tid+"\n")
 
 tidfile.close()
-print len(matches)
+print "Length of matches: " + str(len(matches))
