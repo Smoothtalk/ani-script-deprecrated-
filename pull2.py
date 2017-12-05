@@ -125,8 +125,7 @@ def getAllUniqueMALShows(users):
 	print "Length of all shows(incl custom title, no dupes): " + str(len(allShows))
 	return allShows
 
-def getMatches(releases, allShows):
-	matches = []
+def getMatches(releases, allShows, matches):
 	for release in releases:
 		seriesTitle = getSeriesTitle(release.title)
 		for malShow in allShows:
@@ -140,7 +139,7 @@ def getMatches(releases, allShows):
 						pass
 	return matches
 
-def addMatches(matches):
+def makeMagnets(matches):
 	tidfile = open('tidfile', 'a+') #stores torrent tids so that they wont download again
 	existingTIDs = tidfile.read().split("\n")
 
@@ -186,8 +185,8 @@ for url in feedUrls:
 	if(url != ""):
 		feed = feedparser.parse(url)
 		releases = feed.get('entries')
-		matches = getMatches(releases, allShows)
+		matches = getMatches(releases, allShows, matches)
 
-addMatches(matches)
+makeMagnets(matches)
 
 print "Length of matches: " + str(len(matches))
