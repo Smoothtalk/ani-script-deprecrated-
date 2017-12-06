@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from fuzzywuzzy import fuzz
 
-FUZZ_RATIO = 70
+FUZZ_RATIO = 85
 
 #anime object to store relevant deets
 class userClass():
@@ -110,7 +110,7 @@ def getAllUniqueMALShows(users):
 				if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
 					allShows.append(tempAnime)
 				elif series_status == "2":
-					if (lastWeek <= seriesEnd <= currDate): #TODO FIX THIS #series_end is within a week of today's date
+					if (lastWeek <= currDate <= seriesEnd): #TODO FIX THIS #series_end is within a week of today's date
 						allShows.append(tempAnime)
 
 		#add custom titles here
@@ -137,27 +137,38 @@ def getMatches(releases, allShows, matches):
 					if(fuzz.ratio(altTitle.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
 						matches.append(release)
 						pass
+
 	return matches
 
 def makeMagnets(matches):
 	tidfile = open('tidfile', 'a+') #stores torrent tids so that they wont download again
 	existingTIDs = tidfile.read().split("\n")
+	currDate = datetime.datetime.strptime(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S") #getting today with out stupid microseconds
+	lastWeek = currDate - datetime.timedelta(days=7)
 
 	for matchedShow in matches:
 		print matchedShow.title
 		title = matchedShow.title
 		url = matchedShow.link
-		tid = str(url[20:52]) #get tid from torrent url
 
-		# if tid not in existingTIDs: #if tid doesn't already exist, download
-		# 	fileWithQuotes = '"' + title + ".torrent" + '"'
-		# 	command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
-		# 	os.system(command)
-	    #
-		# 	command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
-		# 	os.system(command)
-		# 	tidfile.write(tid+"\n")
+		if ".torrent" in url: #Nyaa RSS
+			tid = str(url[25:31])
+			pubDate = matchedShow.published[:-6]
+			datetime_publish = datetime.datetime.strptime(pubDate.encode("utf-8"), '%a, %d %b %Y %H:%M:%S')
 
+			if(lastWeek <= datetime_publish <= currDate):
+				fileWithQuotes = '"' + tid + ".torrent" + '"'
+				command = "wget \'" + url + '\''
+			else: #HS RSS
+				tid = str(url[20:52])
+				fileWithQuotes = '"' + title + ".torrent" + '"'
+				command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
+
+		if tid not in existingTIDs: #if tid doesn't already exist, download
+			os.system(command)
+			command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
+			os.system(command)
+			tidfile.write(tid+"\n")
 	tidfile.close()
 
 def getFeeds(Rss_Feeds):
@@ -186,7 +197,6 @@ for url in feedUrls:
 		feed = feedparser.parse(url)
 		releases = feed.get('entries')
 		matches = getMatches(releases, allShows, matches)
-
-makeMagnets(matches)
+		makeMagnets(matches)
 
 print "Length of matches: " + str(len(matches))
