@@ -152,19 +152,19 @@ def makeMagnets(matches):
 		url = matchedShow.link
 
 		if ".torrent" in url: #Nyaa RSS
-			tid = str(url[25:31])
 			pubDate = matchedShow.published[:-6]
 			datetime_publish = datetime.datetime.strptime(pubDate.encode("utf-8"), '%a, %d %b %Y %H:%M:%S')
-
 			if(lastWeek <= datetime_publish <= currDate):
+				tid = str(url[25:31])
 				fileWithQuotes = '"' + tid + ".torrent" + '"'
-				command = "wget \'" + url + '\''
-			else: #HS RSS
-				tid = str(url[20:52])
-				fileWithQuotes = '"' + title + ".torrent" + '"'
-				command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
+				# command = "wget \'" + url + '\''
+		else: #HS RSS
+			tid = str(url[20:52])
+			fileWithQuotes = '"' + title + ".torrent" + '"'
+			# command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
 
 		if tid not in existingTIDs: #if tid doesn't already exist, download
+			command = "echo \"lol\""
 			os.system(command)
 			command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
 			os.system(command)
