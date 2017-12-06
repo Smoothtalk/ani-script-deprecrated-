@@ -164,8 +164,7 @@ def makeMagnets(matches):
 			# command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
 
 		if tid not in existingTIDs: #if tid doesn't already exist, download
-			command = "echo \"lol\""
-			os.system(command)
+			# os.system(command)
 			command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
 			os.system(command)
 			tidfile.write(tid+"\n")
