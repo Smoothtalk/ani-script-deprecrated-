@@ -104,37 +104,40 @@ def sync (x, hashed, settings, seriesName, episode, filename, userList, custom_t
 	return
 
 if __name__=='__main__':
-    settings = readJson()
-    #change sys.argv[1] to renamed
-    hash = sys.argv[2]
-    hashed = 0
+	try:
+	    settings = readJson()
+	    #change sys.argv[1] to renamed
+	    hash = sys.argv[2]
+	    hashed = 0
 
-    #substring the torrent name. If the script throws an exception here later
-    #on, switch index to find
-    tempName = sys.argv[3].replace("_", " ")
-    firstHyphen = tempName.rfind(' - ')
-    firstCBrac = tempName.index(']', 0)
-    seriesName = tempName[firstCBrac+2:firstHyphen]
-    episode = tempName[firstHyphen+3:]
-    episode = episode[:episode.index(' ',0)]
-    filename = seriesName + ' - ' + episode + '.mkv'
+	    #substring the torrent name. If the script throws an exception here later
+	    #on, switch index to find
+	    tempName = sys.argv[3].replace("_", " ")
+	    firstHyphen = tempName.rfind(' - ')
+	    firstCBrac = tempName.index(']', 0)
+	    seriesName = tempName[firstCBrac+2:firstHyphen]
+	    episode = tempName[firstHyphen+3:]
+	    episode = episode[:episode.index(' ',0)]
+	    filename = seriesName + ' - ' + episode + '.mkv'
 
-    seriesName = seriesName.strip()
-    custom_title_Avi_len = len(settings['Users']['Smoothtalk']['custom_titles'])
-    custom_title_Kan_len = len(settings['Users']['shinigamibob']['custom_titles'])
+	    seriesName = seriesName.strip()
+	    custom_title_Avi_len = len(settings['Users']['Smoothtalk']['custom_titles'])
+	    custom_title_Kan_len = len(settings['Users']['shinigamibob']['custom_titles'])
 
-    #for automation tools because PATH is hard
-    os.chdir(settings['System Settings']['script_location'])
-    filePath = settings['System Settings']['host_download_dir'] + sys.argv[3]
-    path = sys.argv[1]
+	    #for automation tools because PATH is hard
+	    os.chdir(settings['System Settings']['script_location'])
+	    filePath = settings['System Settings']['host_download_dir'] + sys.argv[3]
+	    path = sys.argv[1]
 
-    userList = settings['Users'].keys()
+	    userList = settings['Users'].keys()
 
-    if "downloads/Anime" not in path:
-        sys.exit(1)
+	    if "downloads/Anime" not in path:
+	        sys.exit(1)
 
-    jobs = []
-    for x in range(len(settings['Users'])):
-        p = multiprocessing.Process(target=sync, args=(x, hashed, settings, seriesName, episode, filename, userList, custom_title_Avi_len, custom_title_Kan_len))
-        jobs.append(p)
-        p.start()
+	    jobs = []
+	    for x in range(len(settings['Users'])):
+	        p = multiprocessing.Process(target=sync, args=(x, hashed, settings, seriesName, episode, filename, userList, custom_title_Avi_len, custom_title_Kan_len))
+	        jobs.append(p)
+	        p.start()
+	except:
+		print failed
