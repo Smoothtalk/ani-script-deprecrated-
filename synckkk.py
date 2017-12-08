@@ -10,6 +10,7 @@ import glob
 import xml.etree.ElementTree as ET
 import multiprocessing
 import traceback
+import subprocess
 from trakt.users import User
 from fuzzywuzzy import fuzz
 from multiprocessing import Process
@@ -104,7 +105,8 @@ def sync(x, settings, User, TvShow, re, traceback, filePath, glob, fileHash):
 				completed.write(fileHash)
 				completed.write('\n')
 				completed.close()
-	except:
+	except Exception as e:
+		print e
 		sys.exit(1)
 		# traceback.print_stack()
 
