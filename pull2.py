@@ -74,6 +74,7 @@ def getAllUniqueMALShows(users):
 	allShows = [] #holds all watching and plan to watch shows
 	currDate = datetime.datetime.today()
 	lastWeek = currDate - datetime.timedelta(days=7)
+	nextWeek = currDate + datetime.timedelta(days=7)
 
 	for user in users:
 		with open(user.dataBaseFileName, 'rt') as f:
@@ -110,7 +111,7 @@ def getAllUniqueMALShows(users):
 				if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
 					allShows.append(tempAnime)
 				elif series_status == "2":
-					if (lastWeek <= currDate <= seriesEnd): #TODO FIX THIS #series_end is within a week of today's date
+					if (lastWeek <= seriesEnd <= nextWeek): #TODO FIX THIS #series_end is within a week of today's date
 						allShows.append(tempAnime)
 
 		#add custom titles here
@@ -128,12 +129,12 @@ def getAllUniqueMALShows(users):
 def getMatches(releases, allShows, matches):
 	for release in releases:
 		seriesTitle = getSeriesTitle(release.title)
-		for malShow in allShows:
-			if(fuzz.ratio(malShow.title.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
-				if (len(malShow.title) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
+		for show in allShows:
+			if(fuzz.ratio(show.title.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
+				if (len(show.title) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
 					matches.append(release) #it matches any anime title with 'k' in it
-			elif(len(malShow.alt_titles) > 0):
-				for altTitle in malShow.alt_titles:
+			elif(len(show.alt_titles) > 0):
+				for altTitle in show.alt_titles:
 					if(fuzz.ratio(altTitle.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
 						matches.append(release)
 						pass
@@ -145,25 +146,26 @@ def makeMagnets(matches):
 	existingTIDs = tidfile.read().split("\n")
 	currDate = datetime.datetime.strptime(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S") #getting today with out stupid microseconds
 	lastWeek = currDate - datetime.timedelta(days=7)
+	nestWeek = currDate + datetime.timedelta(days=7)
 
 	for matchedShow in matches:
-		print matchedShow.title
+		#print matchedShow.title
 		title = matchedShow.title
 		url = matchedShow.link
 
-		if ".torrent" in url: #Nyaa RSS
-			pubDate = matchedShow.published[:-6]
-			datetime_publish = datetime.datetime.strptime(pubDate.encode("utf-8"), '%a, %d %b %Y %H:%M:%S')
-			if(lastWeek <= datetime_publish <= currDate):
-				tid = str(url[25:31])
-				fileWithQuotes = '"' + tid + ".torrent" + '"'
-				# command = "wget \'" + url + '\''
-			else:
-				command = ""
-		else: #HS RSS
-			tid = str(url[20:52])
-			fileWithQuotes = '"' + title + ".torrent" + '"'
-			# command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
+		pubDate = matchedShow.published[:-6]
+		datetime_publish = datetime.datetime.strptime(pubDate.encode("utf-8"), '%a, %d %b %Y %H:%M:%S')
+
+		if(lastWeek <= datetime_publish <= nestWeek):
+			if ".torrent" in url: #Nyaa RSS
+					tid = str(url[25:31])
+					fileWithQuotes = '"' + tid + ".torrent" + '"'
+					# command = "wget \'" + url + '\''
+					command = ""
+			else: #HS RSS
+				tid = str(url[20:52])
+				fileWithQuotes = '"' + title + ".torrent" + '"'
+				# command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
 
 		if tid not in existingTIDs: #if tid doesn't already exist, download
 			# os.system(command)
