@@ -146,7 +146,7 @@ def makeMagnets(matches):
 	existingTIDs = tidfile.read().split("\n")
 	currDate = datetime.datetime.strptime(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S") #getting today with out stupid microseconds
 	lastWeek = currDate - datetime.timedelta(days=7)
-	nestWeek = currDate + datetime.timedelta(days=7)
+	nextWeek = currDate + datetime.timedelta(days=7)
 
 	for matchedShow in matches:
 		print matchedShow.title
