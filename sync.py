@@ -140,4 +140,4 @@ if __name__=='__main__':
 	        jobs.append(p)
 	        p.start()
 	except:
-		print failed
+		print "failed"
