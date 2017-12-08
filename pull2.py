@@ -111,7 +111,7 @@ def getAllUniqueMALShows(users):
 				if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
 					allShows.append(tempAnime)
 				elif series_status == "2":
-					if (lastWeek <= seriesEnd <= nextWeek): #TODO FIX THIS #series_end is within a week of today's date
+					if (lastWeek <= seriesEnd <= nextWeek):
 						allShows.append(tempAnime)
 
 		#add custom titles here
@@ -149,14 +149,14 @@ def makeMagnets(matches):
 	nestWeek = currDate + datetime.timedelta(days=7)
 
 	for matchedShow in matches:
-		#print matchedShow.title
+		print matchedShow.title
 		title = matchedShow.title
 		url = matchedShow.link
 
 		pubDate = matchedShow.published[:-6]
 		datetime_publish = datetime.datetime.strptime(pubDate.encode("utf-8"), '%a, %d %b %Y %H:%M:%S')
 
-		if(lastWeek <= datetime_publish <= nestWeek):
+		if(lastWeek <= datetime_publish <= nextWeek):
 			if ".torrent" in url: #Nyaa RSS
 					tid = str(url[25:31])
 					fileWithQuotes = '"' + tid + ".torrent" + '"'
