@@ -158,6 +158,8 @@ def makeMagnets(matches):
 				tid = str(url[25:31])
 				fileWithQuotes = '"' + tid + ".torrent" + '"'
 				# command = "wget \'" + url + '\''
+			else:
+				command = ""
 		else: #HS RSS
 			tid = str(url[20:52])
 			fileWithQuotes = '"' + title + ".torrent" + '"'
