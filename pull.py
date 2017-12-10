@@ -47,7 +47,6 @@ def getToken():
 	except urllib2.HTTPError,err:
 		print err
 
-
 def searchTVTorrents(token, database):
 	#category 41 is hdtv episodes
 	listTorrentsURL = "https://torrentapi.org/pubapi_v2.php?mode=list&category=41&format=json&token="
@@ -67,6 +66,27 @@ def searchTVTorrents(token, database):
 
 	except urllib2.HTTPError,err:
 		print err
+
+def getShowDict(torrent_title):
+	data = {'Title': "", 'Season': "", 'Episode': ""}
+	regex = r"^.*.S\d\d"
+	preTitle = re.findall(regex, torrent_title, re.IGNORECASE)
+	preTitle = str(preTitle)
+	preTitle = preTitle[2:-6]
+	title = preTitle.replace('.',' ')
+	data['Title'] = title
+
+	regex = r"S\d\dE\d\d"
+	tempSandE = str(re.findall(regex, torrent_title, re.IGNORECASE))
+
+	regex = r"\d\d"
+	seasonAndEpisodeNumbers = re.findall(regex, tempSandE)
+
+	season = seasonAndEpisodeNumbers[:1]
+	episode = seasonAndEpisodeNumbers[1:]
+	data['Season'] = season[0]
+	data['Episode'] = episode[0]
+	return data
 
 
 def compare(allShows, settings):
@@ -111,36 +131,23 @@ def compare(allShows, settings):
 				magnet = magnet.replace(";", "")
 
 				if("720p" in torrent_title): # contains 720p
-					regex = r"^.*.S\d\d"
-					preTitle = re.findall(regex, torrent_title, re.IGNORECASE)
-					preTitle = str(preTitle)
-					preTitle = preTitle[2:-6]
-					title = preTitle.replace('.',' ')
-
-					regex = r"S\d\dE\d\d"
-					tempSandE = str(re.findall(regex, torrent_title, re.IGNORECASE))
-
-					regex = r"\d\d"
-					seasonAndEpisodeNumbers = re.findall(regex, tempSandE)
-
-					season = seasonAndEpisodeNumbers[:1]
-					episode = seasonAndEpisodeNumbers[1:]
+					showDict = getShowDict(torrent_title)
 
 					# try:
 						# print title.strip() + " - " + 'S' + season[0] + 'E' + episode[0] + ".mkv"
 					# except:
 						# print "unable to title, shitty scene groups"
 
-					if(fuzz.ratio(str(i.title)[9:].lower(), title.lower()) > 70 and episode > i.last_watched_episode):
+					if(fuzz.ratio(str(i.title)[9:].lower(), showDict['Title'].lower()) > 70 and episode > i.last_watched_episode):
 						print "Matched"
 						regex = r"id=.*.="
-
+                    
 						dledShowsFile = open('dledshows', 'a+')
 						alreadyDLShows = dledShowsFile.read().split("\n")
 
-						epititle = episode[0]+title
+						epititle = showDict['Episode'] + showDict['Title']
 						if epititle not in alreadyDLShows:
-							fileWithQuotes = '"' + title.strip() + " - " + 'S' + season[0] + 'E' + episode[0] + ".torrent" + '"'
+							fileWithQuotes = '"' + title.strip() + " - " + 'S' + showDict['Season'] + 'E' + showDict['Episode'] + ".torrent" + '"'
 							command = "python Magnet_To_Torrent2.py -m " + '"' + magnet + '"' + " -o " + fileWithQuotes
 							os.system(command)
 
