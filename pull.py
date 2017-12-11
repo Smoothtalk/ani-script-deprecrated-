@@ -67,6 +67,14 @@ def searchTVTorrents(token, database):
 	except urllib2.HTTPError,err:
 		print err
 
+def fixMagnet(magnet):
+	magnet = magnet.strip()
+	magnet = magnet.replace("&amp", "")
+	magnet = magnet.replace(";tr", "&tr")
+	magnet = magnet.replace("dn", "&dn")
+	magnet = magnet.replace(";", "")
+	return magnet
+
 def getShowDict(torrent_title):
 	data = {'Title': "", 'Season': "", 'Episode': ""}
 	regex = r"^.*.S\d\d"
@@ -88,11 +96,8 @@ def getShowDict(torrent_title):
 	data['Episode'] = episode[0]
 	return data
 
-
-def compare(allShows, settings):
-	fileNameKey = "filename"
-	magnetKey = "download"
-
+def getTraktShows():
+	allShows = []
 	my = User(settings['Users']['Smoothtalk']['traktUserName'])
 
 	for y in range(len(my.watched_shows)):
@@ -113,6 +118,12 @@ def compare(allShows, settings):
 		traktShow.last_watched_episode = episode_Number
 		allShows.append(traktShow)
 
+	return allShows
+
+def compare(allShows, settings, matches):
+	fileNameKey = "filename"
+	magnetKey = "download"
+
 	with open(database, 'r') as f:
 		data = json.load(f)
 		json_data = json.dumps(data)
@@ -122,13 +133,7 @@ def compare(allShows, settings):
 		for sets in torrents:
 			for indValues in sets:
 				torrent_title = indValues.get(fileNameKey)
-
-				magnet = indValues.get(magnetKey)
-				magnet = magnet.strip()
-				magnet = magnet.replace("&amp", "")
-				magnet = magnet.replace(";tr", "&tr")
-				magnet = magnet.replace("dn", "&dn")
-				magnet = magnet.replace(";", "")
+				magnet = fixMagnet(indValues.get(magnetKey))
 
 				if("720p" in torrent_title): # contains 720p
 					showDict = getShowDict(torrent_title)
@@ -139,31 +144,44 @@ def compare(allShows, settings):
 						# print "unable to title, shitty scene groups"
 
 					if(fuzz.ratio(str(i.title)[9:].lower(), showDict['Title'].lower()) > 70 and episode > i.last_watched_episode):
-						print "Matched"
 						regex = r"id=.*.="
-                    
+
 						dledShowsFile = open('dledshows', 'a+')
 						alreadyDLShows = dledShowsFile.read().split("\n")
 
-						epititle = showDict['Episode'] + showDict['Title']
-						if epititle not in alreadyDLShows:
-							fileWithQuotes = '"' + title.strip() + " - " + 'S' + showDict['Season'] + 'E' + showDict['Episode'] + ".torrent" + '"'
-							command = "python Magnet_To_Torrent2.py -m " + '"' + magnet + '"' + " -o " + fileWithQuotes
-							os.system(command)
+						epititle = showDict['Title'] + '-S' + showDict['Season'] + 'E' + showDict['Episode']
 
-							command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
-							os.system(command)
+						if epititle not in alreadyDLShows:
+							print "Downloading"
+							fileWithQuotes = '"' + showDict['Title'].strip() + " - " + 'S' + showDict['Season'] + 'E' + showDict['Episode'] + ".torrent" + '"'
+
+							matchDict = {'File': fileWithQuotes}
+							magnetDict = {'Magnet': magnet}
+							matchDict.update(magnetDict)
+
+							matches.append(matchDict)
 
 							dledShowsFile.write(epititle+'\n')
 
 						dledShowsFile.close()
 
+def generateMagnets(matches):
+	for show in matches:
+		# command = "python Magnet_To_Torrent2.py -m " + '"' + show['Magnet'] + '"' + " -o " + show['File']
+		# os.system(command)
+        #
+		# command = "mv " + show['File'] + ' ' + settings['System Settings']['watch_dir']
+		command = "echo \"it worked\""
+		os.system(command)
+
 settings = readJson()
 os.chdir(settings['System Settings']['script_location'])
 
 database = "RarBG" + ".json"
-allShows = []
+matches = []
 
 token = getToken()
 searchTVTorrents(token, database)
-compare(allShows, settings)
+allShows = getTraktShows()
+compare(allShows, settings, matches)
+generateMagnets(matches)
