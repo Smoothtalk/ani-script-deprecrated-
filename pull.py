@@ -21,9 +21,23 @@ from bs4 import BeautifulSoup
 from collections import OrderedDict
 
 class TvShow():
-	title = ""
-	last_watched_date = -1
-	last_watched_episode = -1
+	def __init__(self):
+		self.title = ""
+		self.last_watched_date = -1
+		self.last_watched_episode = -1
+
+	def setTitle(self, title):
+		self.title = title
+	def getTitle(self):
+		return self.title
+	def setLast_watched_date(self, Last_watched_date):
+		self.last_watched_date = Last_watched_date
+	def getLast_watched_date(self):
+		return self.last_watched_date
+	def setlast_watched_episode(self, Last_watched_episode):
+		self.last_watched_episode = Last_watched_episode
+	def getlast_watched_episode(self):
+		return self.last_watched_episode
 
 def readJson():
 	json_data=open("vars.json").read()
@@ -113,9 +127,9 @@ def getTraktShows():
 		date_Watched_At = last_episode_watched['last_watched_at']
 
 		traktShow = TvShow();
-		traktShow.title = my.watched_shows[y]
-		traktShow.last_watched_date = date_Watched_At
-		traktShow.last_watched_episode = episode_Number
+		traktShow.setTitle(my.watched_shows[y])
+		traktShow.setLast_watched_date(date_Watched_At)
+		traktShow.setlast_watched_episode(episode_Number)
 		allShows.append(traktShow)
 
 	return allShows
@@ -143,7 +157,7 @@ def compare(allShows, settings, matches):
 					# except:
 						# print "unable to title, shitty scene groups"
 
-					if(fuzz.ratio(str(i.title)[9:].lower(), showDict['Title'].lower()) > 70 and episode > i.last_watched_episode):
+					if(fuzz.ratio(str(i.getTitle())[9:].lower(), showDict['Title'].lower()) > 70 and episode > i.getlast_watched_episode):
 						regex = r"id=.*.="
 
 						dledShowsFile = open('dledshows', 'a+')

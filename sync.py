@@ -49,10 +49,63 @@ class Series:
 	def getFilePath(self):
 		return self.filePath
 
+class User:
+	def __init__(self, userSettings):
+		self.remote_port = userSettings['remote_port']
+		self.remote_host = userSettings['remote_host']
+		self.remote_download_dir = userSettings['remote_download_dir']
+		self.discord_ID = userSettings['discord_ID']
+		self.custom_titles = userSettings['custom_titles']
+		self.MalShows = [] #titles of mal shows
+
+	def getRemote_Port(self):
+		return self.remote_port
+	def getRemote_Host(self):
+		return self.remote_host
+	def getRemote_Download_Dir(self):
+		return self.remote_download_dir
+	def getDiscord_ID(self):
+		return self.discord_ID
+	def getCustom_Titles(self):
+		return self.custom_titles
+	def addMalShow(self, malShow):
+		self.MalShows.append(malShow)
+	def setMalShows(self, malShows): #might not need this
+		self.MalShows = malShows
+	def getMalShows(self):
+		return self.MalShows
+
 def readJson():
 	json_data=open("vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
+
+def getMALShows(malUserFile, user):
+	with open(malUserFile, 'rt') as f:
+		tree = ET.parse(f)
+
+		for node in tree.findall('.//anime'):
+			raw_status = node.find('my_status').text
+			status = raw_status.strip()
+			if status == '1' or status == '6':
+				raw_title = node.find('series_title').text
+				raw_alt_title = node.find('series_synonyms').text #this is a list
+				raw_my_watched_episodes = node.find('my_watched_episodes').text
+
+				title = raw_title.strip()
+				alt_title_unsplit = raw_alt_title.strip()
+				alt_title = alt_title_unsplit.split('; ')
+				my_watched_episodes = raw_my_watched_episodes.strip()
+
+				for element in alt_title:
+					if(len(element) >= 1):
+						user.addMalShow(element)
+
+		for show in user.getCustom_Titles():
+				user.addMalShow(show)
+
+def getMatches():
+	print "x"
 
 def sync (x, hashed, settings, serialToSync, userList, custom_title_Avi_len, custom_title_Kan_len):
 	print "Series: " + 	serialToSync.getSeriesName()
@@ -152,29 +205,24 @@ if __name__=='__main__':
 		serialToSync.getSeriesTitle(sys.argv[3])
 		serialToSync.setFilePath(settings['System Settings']['host_download_dir'] + sys.argv[3])
 
-		custom_title_Avi_len = len(settings['Users']['Smoothtalk']['custom_titles'])
-		custom_title_Kan_len = len(settings['Users']['shinigamibob']['custom_titles'])
-
 		#for automation tools because PATH is hard
 		os.chdir(settings['System Settings']['script_location'])
-		path = sys.argv[1]
 
-		userList = settings['Users'].keys()
-
-		if "downloads/Anime" not in path:
+		if "downloads/Anime" not in sys.argv[1]:
 			sys.exit(1)
 
 		jobs = []
-		for x in settings['Users']:
-			settings['Users'][x]
-			p = multiprocessing.Process(target=sync, args=(x, hashed, settings, serialToSync, userList, custom_title_Avi_len, custom_title_Kan_len))
-			jobs.append(p)
-			p.start()
+		for user in settings['Users']:
+			#print settings['Users'][user]
+			syncingUser = User(settings['Users'][user])
+			malUserFile = user + ".xml" #Database file
+			malShows = getMALShows(malUserFile, syncingUser)
+			for x in syncingUser.getMalShows():
+				print x
+			# settings['Users'][user] #OrderedDict
+			# p = multiprocessing.Process(target=sync, args=(user, hashed, settings, serialToSync, userList, custom_title_Avi_len, custom_title_Kan_len))
+			# jobs.append(p)
+			# p.start()
 
-		# jobs = []
-		# for x in range(len(settings['Users'])):
-		# 	p = multiprocessing.Process(target=sync, args=(x, hashed, settings, serialToSync, userList, custom_title_Avi_len, custom_title_Kan_len))
-		# 	jobs.append(p)
-		# 	p.start()
 	except Exception as e:
 		print e

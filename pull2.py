@@ -14,20 +14,56 @@ FUZZ_RATIO = 85
 
 #anime object to store relevant deets
 class userClass():
-	userName = None
-	Custom_Titles = []
-	dataBaseFileName = None
+	def __init__(self):
+		self.userName = None
+		self.Custom_Titles = []
+		self.dataBaseFileName = None
+
+	def setUserName(self, userName):
+		self.userName = userName
+	def getUserName(self):
+		return self.userName
+	def setCustom_Titles(self, customTitles):
+		self.Custom_Titles = customTitles
+	def getCustom_Titles(self):
+		return self.Custom_Titles
+	def setDataBaseFileName(self, dataBaseFileName):
+		self.dataBaseFileName = dataBaseFileName
+	def getDataBaseFileName(self):
+		return self.dataBaseFileName
 
 class anime():
-	show_id = None
-	title = None
-	alt_titles = []
-	status = None
-	last_watched = None
+	def __init__(self):
+		self.show_id = None
+		self.title = None
+		self.self.alt_titles = []
+		self.status = None
+		self.last_watched = None
+
 	def __eq__(self, other):
 		return self.show_id == other.show_id
 	def __hash__(self):
 		return hash(self.show_id)
+	def setShow_id(self, show_id):
+		self.show_id = show_id
+	def getShow_id(self):
+		return self.show_id
+	def setTitle(self, title):
+		self.title = title
+	def getTitle(self):
+		return self.title
+	def setAlt_titles(self, altTitles):
+		self.alt_titles = altTitles
+	def getAlt_titles(self):
+		return self.alt_titles
+	def setStatus(self, status):
+		self.status = status
+	def getStatus(self):
+		return self.status
+	def setLast_watched(self, last_watched):
+		self.last_watched = last_watched
+	def getLast_watched(self):
+		return self.last_watched
 
 def readJson():
 	json_data=open("vars.json").read()
@@ -62,10 +98,11 @@ def generateUserObjects(users):
 	userList = []
 
 	for user in users:
+		dataBaseFileName = user + ".xml"
 		newUser = userClass()
-		newUser.userName = user
-		newUser.Custom_Titles = users[user]['custom_titles']
-		newUser.dataBaseFileName = user + ".xml"
+		newUser.setUserName(user)
+		newUser.setCustom_Titles(users[user]['custom_titles'])
+		newUser.setDataBaseFileName(dataBaseFileName)
 		userList.append(newUser)
 
 	return userList
@@ -77,7 +114,7 @@ def getAllUniqueMALShows(users):
 	nextWeek = currDate + datetime.timedelta(days=7)
 
 	for user in users:
-		with open(user.dataBaseFileName, 'rt') as f:
+		with open(user.getDataBaseFileName(), 'rt') as f:
 			tree = ET.parse(f)
 
 		for node in tree.findall('.//anime'):
@@ -103,11 +140,11 @@ def getAllUniqueMALShows(users):
 					seriesEnd = datetime.datetime.strptime(series_end_date, '%Y-%m-%d') #conversion from string to datetime
 
 				tempAnime = anime()
-				tempAnime.show_id = show_id
-				tempAnime.title = title
-				tempAnime.alt_titles = alt_title
-				tempAnime.last_watched = my_watched_episodes
-				tempAnime.status = series_status
+				tempAnime.setShow_id(show_id)
+				tempAnime.setTitle(title)
+				tempAnime.setAlt_titles(alt_title)
+				tempAnime.setLast_watched(my_watched_episodes)
+				tempAnime.setStatus(series_status)
 				if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
 					allShows.append(tempAnime)
 				elif series_status == "2":
@@ -115,10 +152,10 @@ def getAllUniqueMALShows(users):
 						allShows.append(tempAnime)
 
 		#add custom titles here
-		for altTitle in user.Custom_Titles:
+		for altTitle in user.getCustom_Titles():
 			tempAnime = anime()
-			tempAnime.title = altTitle.strip()
-			if(checkDupes(tempAnime.title, allShows)):
+			tempAnime.setTitle(altTitle.strip())
+			if(checkDupes(tempAnime.getTitle(), allShows)):
 				allShows.append(tempAnime)
 
 	print "Length of all shows(dupes included): " + str(len(allShows))
@@ -130,11 +167,11 @@ def getMatches(releases, allShows, matches):
 	for release in releases:
 		seriesTitle = getSeriesTitle(release.title)
 		for show in allShows:
-			if(fuzz.ratio(show.title.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
-				if (len(show.title) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
+			if(fuzz.ratio(show.getTitle().decode('utf-8'), seriesTitle) > FUZZ_RATIO):
+				if (len(show.getTitle()) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
 					matches.append(release) #it matches any anime title with 'k' in it
-			elif(len(show.alt_titles) > 0):
-				for altTitle in show.alt_titles:
+			elif(len(show.getAlt_titles) > 0):
+				for altTitle in show.getAlt_titles:
 					if(fuzz.ratio(altTitle.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
 						matches.append(release)
 						pass
@@ -186,10 +223,9 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 settings = readJson()
-settingsUsers = settings['Users'].keys()
 
 #pull updated user list from Mal. not /really/ required, but w/e
-pullMALUserData(settingsUsers)
+pullMALUserData(settings['Users'].keys())
 userObjects = generateUserObjects(settings['Users'])
 allShows = getAllUniqueMALShows(userObjects)
 feedUrls = getFeeds(settings['Rss Feeds'])
