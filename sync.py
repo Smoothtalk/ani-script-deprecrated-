@@ -134,7 +134,7 @@ def sync (syncingUser, serialToSync):
 		process = subprocess.check_call(command, shell=True)
 		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() +  sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + serialToSync.getFileName() + "'\""
 		process = subprocess.check_call(command, shell=True)
-		command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + "0"
+		command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
 		process = subprocess.call(command, shell=True)
 		hashtoFile(sys.argv[2])
 
