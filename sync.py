@@ -13,9 +13,11 @@ from fuzzywuzzy import fuzz
 from multiprocessing import Process
 from collections import OrderedDict
 
+FUZZ_RATIO = 70
+
 class Series:
 	seriesName = ""
-	episode = ""
+	episode = None
 	fileName = ""
 	filePath = ""
 
@@ -25,7 +27,7 @@ class Series:
 	def getSeriesEpisode(self):
 		return self.episode
 
-	def getSeriesTitle(self, fileName):
+	def setSeriesTitle(self, fileName):
 		tempName = fileName.replace("_", " ")
 		firstHyphen = tempName.rfind(' - ')
 		firstCBrac = tempName.index(']', 0)
@@ -50,14 +52,18 @@ class Series:
 		return self.filePath
 
 class User:
-	def __init__(self, userSettings):
+	def __init__(self, user, userSettings):
+		self.userName = user
 		self.remote_port = userSettings['remote_port']
 		self.remote_host = userSettings['remote_host']
 		self.remote_download_dir = userSettings['remote_download_dir']
 		self.discord_ID = userSettings['discord_ID']
 		self.custom_titles = userSettings['custom_titles']
-		self.MalShows = [] #titles of mal shows
+		self.MalShows = {} #titles of mal shows
+		self.malDatabaseFileName = user + ".xml" #Database File name
 
+	def getUserName(self):
+		return self.userName
 	def getRemote_Port(self):
 		return self.remote_port
 	def getRemote_Host(self):
@@ -68,17 +74,25 @@ class User:
 		return self.discord_ID
 	def getCustom_Titles(self):
 		return self.custom_titles
-	def addMalShow(self, malShow):
-		self.MalShows.append(malShow)
+	def addMalShow(self, malShow, episodesWatched):
+		newShow = {malShow: {'episodesWatched': episodesWatched}}
+	 	self.MalShows.update(newShow)
 	def setMalShows(self, malShows): #might not need this
 		self.MalShows = malShows
 	def getMalShows(self):
 		return self.MalShows
+	def getMalDatabaseFileName(self):
+		return self.malDatabaseFileName
 
 def readJson():
 	json_data=open("vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
+
+def pullMALUserData(userList):
+	for user in userList:
+		command = "python retMal.py " + '\"' + user + '\"'
+		os.system(command)
 
 def getMALShows(malUserFile, user):
 	with open(malUserFile, 'rt') as f:
@@ -99,110 +113,46 @@ def getMALShows(malUserFile, user):
 
 				for element in alt_title:
 					if(len(element) >= 1):
-						user.addMalShow(element)
+						user.addMalShow(element, my_watched_episodes)
+
+				user.addMalShow(title, my_watched_episodes)
 
 		for show in user.getCustom_Titles():
-				user.addMalShow(show)
+				user.addMalShow(show, 0)
 
-def getMatches():
-	print "x"
+def getMatch(malShows, serialToSync, syncingUser):
+	match = None
+	for show in malShows.keys():
+		if (fuzz.ratio(show, serialToSync.getSeriesName()) > FUZZ_RATIO):
+			return show
+	return match
 
-def sync (x, hashed, settings, serialToSync, userList, custom_title_Avi_len, custom_title_Kan_len):
-	print "Series: " + 	serialToSync.getSeriesName()
-	print "Episode: " + serialToSync.getSeriesEpisode()
-	print x
+def sync (syncingUser, serialToSync):
+	print "Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName()
+	if (serialToSync.getSeriesEpisode() > syncingUser.getMalShows()[serialToSync.getSeriesName()].values()[0]):
+		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
+		process = subprocess.check_call(command, shell=True)
+		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() +  sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + serialToSync.getFileName() + "'\""
+		process = subprocess.check_call(command, shell=True)
+		command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + "0"
+		process = subprocess.call(command, shell=True)
+		hashtoFile(sys.argv[2])
 
-	index = 0
-	found = "false"
-
-	command = "python retMal.py " + '\"' + userList[x] + '\"'
-	os.system(command)
-	file_input = open("flags", 'rb')
-
-	database = userList[x] + ".xml"
-
-	with open(database, 'rt') as f:
-		tree = ET.parse(f)
-
-		for node in tree.findall('.//anime'):
-			raw_status = node.find('my_status').text
-			status = raw_status.strip()
-			if status == '1' or status == '6':
-				raw_title = node.find('series_title').text
-				raw_alt_title = node.find('series_synonyms').text #this is a list
-				raw_my_watched_episodes = node.find('my_watched_episodes').text
-
-				title = raw_title.strip()
-				alt_title_unsplit = raw_alt_title.strip()
-				alt_title = alt_title_unsplit.split('; ')
-				my_watched_episodes = raw_my_watched_episodes.strip()
-
-				for element in alt_title:
-					if found == "false":
-						# if title == seriesName or element == seriesName:
-						if (fuzz.ratio(title, serialToSync.getSeriesName()) > 70 or fuzz.ratio(element, serialToSync.getSeriesName()) > 70):
-							found = "true"
-
-        if x == 0:
-            listLen = custom_title_Avi_len
-            customTitleList = settings['Users']['Smoothtalk']["custom_titles"]
-        elif x == 1:
-            listLen = custom_title_Kan_len
-            customTitleList = settings['Users']['shinigamibob']["custom_titles"]
-
-        while index < listLen and found == "false":
-            CustomTitle = customTitleList[index].strip()
-            if CustomTitle == serialToSync.getSeriesName():
-                found = "true"
-            index+=1;
-
-        if found == "true" or (x == 0 and serialToSync.getSeriesName() == 'Ame-con!!'):
-            if serialToSync.getSeriesEpisode() > int(my_watched_episodes):
-				if x == 0:
-					found = "true"
-					command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + settings['Users']['Smoothtalk']['remote_host'] + ":" + settings['Users']['Smoothtalk']['remote_download_dir'] + "\""
-					process = subprocess.check_call(command, shell=True)
-					command = "ssh -p" + settings['Users']['Smoothtalk']['remote_port'] + ' ' + settings['Users']['Smoothtalk']['remote_host'] +  " \"mv '" + settings['Users']['Smoothtalk']['remote_download_dir'] +  sys.argv[3] + "' '" + settings['Users']['Smoothtalk']['remote_download_dir'] + serialToSync.getFileName() + "'\""
-					process = subprocess.check_call(command, shell=True)
-					command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + "0"
-					process = subprocess.call(command, shell=True)
-					if hashed == 0:
-						os.chdir(settings['System Settings']['script_location'])
-						completed = open("completed.txt", "a")
-						completed.write(hash)
-						completed.write('\n')
-						completed.close()
-						hashed = 1
-				elif x == 1:
-					found = "true"
-					print "Kan"
-					command = "rsync --progress -v -z -e 'ssh -p" + settings['Users']['shinigamibob']['remote_port'] + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + settings['Users']['shinigamibob']['remote_host'] + ":" + settings['Users']['shinigamibob']['remote_download_dir'] + "\""
-					process =  subprocess.check_call(command, shell=True)
-					command = "ssh -p" + settings['Users']['shinigamibob']['remote_port'] + ' ' + settings['Users']['shinigamibob']['remote_host'] +  " \"mv '" + settings['Users']['shinigamibob']['remote_download_dir'] + sys.argv[3] + "' '" + settings['Users']['shinigamibob']['remote_download_dir'] + serialToSync.getFileName() + "'\""
-					process = subprocess.check_call(command, shell=True)
-					command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + "1"
-					process = subprocess.call(command, shell=True)
-					if hashed == 0:
-						os.chdir(settings['System Settings']['script_location'])
-						completed = open("completed.txt", "a")
-						completed.write(hash)
-						completed.write('\n')
-						completed.close()
-						hashed = 1
-
-	return
+def hashtoFile(theHash):
+	os.chdir(settings['System Settings']['script_location'])
+	completed = open("completed.txt", "a")
+	completed.write(theHash)
+	completed.write('\n')
+	completed.close()
 
 if __name__=='__main__':
 	try:
 		settings = readJson()
-		#change sys.argv[1] to renamed
-		hash = sys.argv[2]
-		hashed = 0
 
 		#substring the torrent name. If the script throws an exception here later
 		#on, switch index to find
 		serialToSync = Series()
-		serialToSync.getSeriesTitle(sys.argv[3])
+		serialToSync.setSeriesTitle(sys.argv[3])
 		serialToSync.setFilePath(settings['System Settings']['host_download_dir'] + sys.argv[3])
 
 		#for automation tools because PATH is hard
@@ -214,15 +164,15 @@ if __name__=='__main__':
 		jobs = []
 		for user in settings['Users']:
 			#print settings['Users'][user]
-			syncingUser = User(settings['Users'][user])
-			malUserFile = user + ".xml" #Database file
-			malShows = getMALShows(malUserFile, syncingUser)
-			for x in syncingUser.getMalShows():
-				print x
-			# settings['Users'][user] #OrderedDict
-			# p = multiprocessing.Process(target=sync, args=(user, hashed, settings, serialToSync, userList, custom_title_Avi_len, custom_title_Kan_len))
-			# jobs.append(p)
-			# p.start()
+			pullMALUserData(settings['Users'].keys())
+			syncingUser = User(user, settings['Users'][user])
+			getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
+			match = getMatch(syncingUser.getMalShows(), serialToSync, syncingUser)
+			if(match is not None):
+				# print syncingUser.getMalShows()[match].values()[0]
+				p = multiprocessing.Process(target=sync, args=(syncingUser, serialToSync))
+				jobs.append(p)
+				p.start()
 
 	except Exception as e:
 		print e
