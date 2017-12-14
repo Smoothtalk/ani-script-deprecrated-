@@ -54,7 +54,6 @@ def readJson():
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
-#def sync (x, hashed, settings, seriesName, episode, filename, userList, custom_title_Avi_len, custom_title_Kan_len):
 def sync (x, hashed, settings, serialToSync, userList, custom_title_Avi_len, custom_title_Kan_len):
 	print "Series: " + 	serialToSync.getSeriesName()
 	print "Episode: " + serialToSync.getSeriesEpisode()
@@ -166,9 +165,16 @@ if __name__=='__main__':
 			sys.exit(1)
 
 		jobs = []
-		for x in range(len(settings['Users'])):
+		for x in settings['Users']:
+			settings['Users'][x]
 			p = multiprocessing.Process(target=sync, args=(x, hashed, settings, serialToSync, userList, custom_title_Avi_len, custom_title_Kan_len))
 			jobs.append(p)
 			p.start()
+
+		# jobs = []
+		# for x in range(len(settings['Users'])):
+		# 	p = multiprocessing.Process(target=sync, args=(x, hashed, settings, serialToSync, userList, custom_title_Avi_len, custom_title_Kan_len))
+		# 	jobs.append(p)
+		# 	p.start()
 	except Exception as e:
 		print e
