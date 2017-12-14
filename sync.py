@@ -23,10 +23,8 @@ class Series:
 
 	def getSeriesName(self):
 		return self.seriesName
-
 	def getSeriesEpisode(self):
 		return self.episode
-
 	def setSeriesTitle(self, fileName):
 		tempName = fileName.replace("_", " ")
 		firstHyphen = tempName.rfind(' - ')
@@ -41,13 +39,10 @@ class Series:
 		self.seriesName = seriesName
 		self.episode = episode
 		self.fileName = filename
-
 	def getFileName(self):
 		return self.fileName
-
 	def setFilePath(self, filePath):
 		self.filePath = filePath
-
 	def getFilePath(self):
 		return self.filePath
 
@@ -77,8 +72,6 @@ class User:
 	def addMalShow(self, malShow, episodesWatched):
 		newShow = {malShow: {'episodesWatched': episodesWatched}}
 	 	self.MalShows.update(newShow)
-	def setMalShows(self, malShows): #might not need this
-		self.MalShows = malShows
 	def getMalShows(self):
 		return self.MalShows
 	def getMalDatabaseFileName(self):
@@ -120,11 +113,11 @@ def getMALShows(malUserFile, user):
 		for show in user.getCustom_Titles():
 				user.addMalShow(show, 0)
 
-def getMatch(malShows, serialToSync, syncingUser):
+def getMatch(malShows, serialToSync):
 	match = None
 	for show in malShows.keys():
 		if (fuzz.ratio(show, serialToSync.getSeriesName()) > FUZZ_RATIO):
-			return show
+			match = show
 	return match
 
 def sync (syncingUser, serialToSync):
@@ -163,13 +156,11 @@ if __name__=='__main__':
 
 		jobs = []
 		for user in settings['Users']:
-			#print settings['Users'][user]
 			pullMALUserData(settings['Users'].keys())
 			syncingUser = User(user, settings['Users'][user])
 			getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
-			match = getMatch(syncingUser.getMalShows(), serialToSync, syncingUser)
+			match = getMatch(syncingUser.getMalShows(), serialToSync)
 			if(match is not None):
-				# print syncingUser.getMalShows()[match].values()[0]
 				p = multiprocessing.Process(target=sync, args=(syncingUser, serialToSync))
 				jobs.append(p)
 				p.start()
