@@ -36,7 +36,7 @@ class anime():
 	def __init__(self):
 		self.show_id = None
 		self.title = None
-		self.self.alt_titles = []
+		self.alt_titles = []
 		self.status = None
 		self.last_watched = None
 
@@ -170,8 +170,8 @@ def getMatches(releases, allShows, matches):
 			if(fuzz.ratio(show.getTitle().decode('utf-8'), seriesTitle) > FUZZ_RATIO):
 				if (len(show.getTitle()) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
 					matches.append(release) #it matches any anime title with 'k' in it
-			elif(len(show.getAlt_titles) > 0):
-				for altTitle in show.getAlt_titles:
+			elif(len(show.getAlt_titles()) > 0):
+				for altTitle in show.getAlt_titles():
 					if(fuzz.ratio(altTitle.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
 						matches.append(release)
 						pass
