@@ -114,19 +114,22 @@ def getMALShows(malUserFile, user):
 				user.addMalShow(show, 0)
 
 def getMatch(malShows, serialToSync):
-	match = None
+	match = {'Title': "", 'episodesWatched': -1}
 	for show in malShows.keys():
 		if (fuzz.ratio(show, serialToSync.getSeriesName()) > FUZZ_RATIO):
-			match = show
+			match['Title'] = show
+			match['episodesWatched'] = malShows[show]['episodesWatched']
 	return match
 
-def sync (syncingUser, serialToSync):
+def sync(syncingUser, serialToSync, match):
 	print "Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName()
-	if (serialToSync.getSeriesEpisode() > syncingUser.getMalShows()[serialToSync.getSeriesName()].values()[0]):
+	if (int(serialToSync.getSeriesEpisode()) > int(match['episodesWatched'])):
 		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
 		process = subprocess.check_call(command, shell=True)
 		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() +  sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + serialToSync.getFileName() + "'\""
 		process = subprocess.check_call(command, shell=True)
+
+		os.chdir(settings['System Settings']['script_location'])
 		command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
 		process = subprocess.call(command, shell=True)
 		hashtoFile(sys.argv[2])
@@ -161,7 +164,7 @@ if __name__=='__main__':
 			getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
 			match = getMatch(syncingUser.getMalShows(), serialToSync)
 			if(match is not None):
-				p = multiprocessing.Process(target=sync, args=(syncingUser, serialToSync))
+				p = multiprocessing.Process(target=sync, args=(syncingUser, serialToSync, match))
 				jobs.append(p)
 				p.start()
 
