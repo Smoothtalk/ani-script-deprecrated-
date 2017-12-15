@@ -90,25 +90,33 @@ def fixMagnet(magnet):
 	return magnet
 
 def getShowDict(torrent_title):
-	data = {'Title': "", 'Season': "", 'Episode': ""}
-	regex = r"^.*.S\d\d"
-	preTitle = re.findall(regex, torrent_title, re.IGNORECASE)
-	preTitle = str(preTitle)
-	preTitle = preTitle[2:-6]
-	title = preTitle.replace('.',' ')
-	data['Title'] = title
+	try:
+		data = {'Title': "", 'Season': "", 'Episode': ""}
+		regex = r"^.*.S\d\d"
+		preTitle = re.findall(regex, torrent_title, re.IGNORECASE)
+		preTitle = str(preTitle)
+		preTitle = preTitle[2:-6]
+		title = preTitle.replace('.',' ')
+		data['Title'] = title
 
-	regex = r"S\d\dE\d\d"
-	tempSandE = str(re.findall(regex, torrent_title, re.IGNORECASE))
+		regex = r"S\d\dE\d\d"
+		tempSandE = str(re.findall(regex, torrent_title, re.IGNORECASE))
 
-	regex = r"\d\d"
-	seasonAndEpisodeNumbers = re.findall(regex, tempSandE)
+		regex = r"\d\d"
+		seasonAndEpisodeNumbers = re.findall(regex, tempSandE)
 
-	season = seasonAndEpisodeNumbers[:1]
-	episode = seasonAndEpisodeNumbers[1:]
-	data['Season'] = season[0]
-	data['Episode'] = episode[0]
-	return data
+		season = seasonAndEpisodeNumbers[:1]
+		episode = seasonAndEpisodeNumbers[1:]
+		data['Season'] = season[0]
+		data['Episode'] = episode[0]
+
+		return data
+	except Exception as e:
+		print str(torrent_title) + " fucked it all up"
+		data['Title'] = ""
+		data['Season'] = -1
+		data['Episode'] = -1
+		return data
 
 def getTraktShows():
 	allShows = []
@@ -156,8 +164,7 @@ def compare(allShows, settings, matches):
 						# print title.strip() + " - " + 'S' + season[0] + 'E' + episode[0] + ".mkv"
 					# except:
 						# print "unable to title, shitty scene groups"
-
-					if(fuzz.ratio(str(i.getTitle())[9:].lower(), showDict['Title'].lower()) > 70 and episode > i.getlast_watched_episode):
+					if(fuzz.ratio(str(i.getTitle())[9:].lower(), showDict['Title'].lower()) > 70 and showDict['Episode'] > i.getlast_watched_episode):
 						regex = r"id=.*.="
 
 						dledShowsFile = open('dledshows', 'a+')
