@@ -13,7 +13,6 @@ import multiprocessing
 import urllib2
 import simplejson as json
 from fuzzywuzzy import fuzz
-from pprint import pprint
 from urllib2 import Request, urlopen
 from trakt.users import User
 from multiprocessing import Process
