@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-dependencies = ['bs4', 'fuzzywuzzy']
+dependencies = ['bs4', 'fuzzywuzzy', 'trakt', 'simplejson', 'feedparser']
 dependencies3 = ['discord.py', 'multidict', 'websockets']
 noRtorrent = "The program \'rtorrent\' is currently not installed. You can install it by typing:\napt install rtorrent"
 
