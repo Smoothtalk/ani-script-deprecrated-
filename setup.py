@@ -12,12 +12,22 @@ def checkRutorrent():
 			output = process.stdout.readline()
 			error = process.stderr.readline()
 			print ("Rtorrent is installed")
+			#add to rtorrent.rc the line
 			return
 	except OSError as e:
 		if e.errno == os.errno.ENOENT:
 			print ("Rtorrent not installed")
 		else:
 			raise
+
+def cronTabAdding():
+	pass
+
+def checkForRTcontrol():
+	pass
+
+def constructVarFile():
+	pass
 
 def getPipList():
 	try:
