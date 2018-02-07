@@ -3,6 +3,21 @@ import subprocess
 
 dependencies = ['bs4', 'fuzzywuzzy']
 dependencies3 = ['discord.py', 'multidict', 'websockets']
+noRtorrent = "The program \'rtorrent\' is currently not installed. You can install it by typing:\napt install rtorrent"
+
+def checkRutorrent():
+	try:
+		process = subprocess.Popen(["rtorrent", "-h"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		while True:
+			output = process.stdout.readline()
+			error = process.stderr.readline()
+			print ("Rtorrent is installed")
+			return
+	except OSError as e:
+		if e.errno == os.errno.ENOENT:
+			print ("Rtorrent not installed")
+		else:
+			raise
 
 def getPipList():
 	try:
@@ -87,9 +102,25 @@ def check3List(packages):
 	return remainingDependicies
 
 def installMissingDependicies(dependencies):
+    failedToFind = b'No matching distribution found for'
+    for package in dependencies:
+        #print (package)
+        process = subprocess.Popen(["sudo", "pip", "install", package], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        while True:
+            output = process.stdout.readline()
+            error = process.stderr.readline()
+            if(failedToFind in error):
+                break
+            if output == '' and process.poll() is not None:
+                break
+            if output:
+                pass
+        rc = process.poll()
+
+def installMissing3Dependicies(dependencies):
 	failedToFind = b'No matching distribution found for'
 	for package in dependencies:
-		process = subprocess.Popen(["sudo", "pip", "install", package], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		process = subprocess.Popen(["sudo", "pip3", "install", package], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		while True:
 			output = process.stdout.readline()
 			error = process.stderr.readline()
@@ -98,9 +129,10 @@ def installMissingDependicies(dependencies):
 			if output == '' and process.poll() is not None:
 				break
 			if output:
-				print (output.strip())
+				pass
 		rc = process.poll()
 
+checkRutorrent()
 packages = getPipList()
 packages3 = getPip3List()
 theDependiciesLeft = checkList(packages)
@@ -108,7 +140,7 @@ theDependicies3Left = check3List(packages3)
 if(len(theDependicies3Left) == 0):
 	print ("All Deps of Pip3 installed")
 else:
-	installMissingDependicies(theDependicies3Left)
+	installMissing3Dependicies(theDependicies3Left)
 if(len(theDependiciesLeft) == 0):
 	print ("All Deps of Pip installed")
 else:
