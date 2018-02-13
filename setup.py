@@ -95,7 +95,26 @@ def cronTabAdding():
 			raise
 
 def checkForRTcontrol():
-	pass
+	try:
+		process = subprocess.Popen(["rtcontrol", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		while True:
+			output = str(process.stdout.readline(), 'utf-8')
+			error = str(process.stderr.readline(), 'utf-8')
+			if (output != '' or error != ''):
+				if "not found" in error:
+					print ("Rtcontrol not found on system")
+					print ("Please go to:\nhttp://pyrocore.readthedocs.io/en/latest/installation.html\nto install")
+				else:
+					#rtconrol Found
+					pass
+			else:
+				break
+	except OSError as e:
+		print (type(e))
+		if e.errno == os.errno.ENOENT:
+			print ("File Not Found?")
+		else:
+			raise
 
 def constructVarFile():
 	pass
@@ -213,8 +232,9 @@ def installMissing3Dependicies(dependencies):
 				pass
 		rc = process.poll()
 
-cronTabAdding()
+#cronTabAdding()
 #checkRutorrent()
+checkForRTcontrol()
 # packages = getPipList()
 # packages3 = getPip3List()
 # theDependiciesLeft = checkList(packages)
