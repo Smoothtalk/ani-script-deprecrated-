@@ -154,7 +154,7 @@ def checkForPips():
 		if (output != '' or error != ''):
 			if "not found" in error:
 				print ("Pip not found on system, attempting to install")
-				process = subprocess.Popen(["sudo", "apt", "install", "python-pip"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				process = subprocess.Popen(["sudo", "apt", "-y", "install", "python-pip"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 				output = str(process.stdout.readline(), 'utf-8')
 				error = str(process.stderr.readline(), 'utf-8')
 				print ("output: " + output)
@@ -168,7 +168,7 @@ def checkForPips():
 		if (output != '' or error != ''):
 			if "not found" in error:
 				print ("Pip3 not found on system, attempting to install")
-				process = subprocess.Popen(["sudo", "apt", "install", "python3-pip"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				process = subprocess.Popen(["sudo", "apt", "-y", "install", "python3-pip"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 				output = str(process.stdout.readline(), 'utf-8')
 				error = str(process.stderr.readline(), 'utf-8')
 				print ("output: " + output)
