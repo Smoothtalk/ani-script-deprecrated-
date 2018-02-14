@@ -145,9 +145,42 @@ def constructVarFile():
 
 #sudo: pip: command not found
 #sudo: pip3: command not found
-
 def checkForPips():
-	pass
+	pipsExist = True
+	try:
+		process = subprocess.Popen(["sudo", "pip", "-V"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		output = str(process.stdout.readline(), 'utf-8')
+		error = str(process.stderr.readline(), 'utf-8')
+		if (output != '' or error != ''):
+			if "not found" in error:
+				print ("Pip not found on system, attempting to install")
+				process = subprocess.Popen(["sudo", "apt", "install", "python-pip"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				output = str(process.stdout.readline(), 'utf-8')
+				error = str(process.stderr.readline(), 'utf-8')
+			else:
+				print ("Pip found on system")
+				pass
+		process = subprocess.Popen(["sudo", "pip3", "-V"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		output = str(process.stdout.readline(), 'utf-8')
+		error = str(process.stderr.readline(), 'utf-8')
+		if (output != '' or error != ''):
+			if "not found" in error:
+				print ("Pip3 not found on system, attempting to install")
+				process = subprocess.Popen(["sudo", "apt", "install", "python3-pip"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				output = str(process.stdout.readline(), 'utf-8')
+				error = str(process.stderr.readline(), 'utf-8')
+			else:
+				print ("Pip3 found on system")
+				pass
+		return pipsExist
+	except OSError as e:
+		pipsExist = False
+		print (type(e))
+		if e.errno == os.errno.ENOENT:
+			print ("File Not Found?")
+		else:
+			raise
+		return pipsExist
 
 def getPipList():
 	try:
@@ -262,18 +295,20 @@ def installMissing3Dependicies(dependencies):
 				pass
 		rc = process.poll()
 
-packages = getPipList()
-packages3 = getPip3List()
-theDependiciesLeft = checkList(packages)
-theDependicies3Left = check3List(packages3)
-if(len(theDependicies3Left) == 0):
-	print ("All Deps of Pip3 installed")
-else:
-	installMissing3Dependicies(theDependicies3Left)
-if(len(theDependiciesLeft) == 0):
-	print ("All Deps of Pip installed")
-else:
-	installMissingDependicies(theDependiciesLeft)
+pipsInstalled = checkForPips()
+if(pipsInstalled):
+	packages = getPipList()
+	packages3 = getPip3List()
+	theDependiciesLeft = checkList(packages)
+	theDependicies3Left = check3List(packages3)
+	if(len(theDependicies3Left) == 0):
+		print ("All Deps of Pip3 installed")
+	else:
+		installMissing3Dependicies(theDependicies3Left)
+	if(len(theDependiciesLeft) == 0):
+		print ("All Deps of Pip installed")
+	else:
+		installMissingDependicies(theDependiciesLeft)
 cronTabAdding()
 checkRutorrent()
 checkForRTcontrol()
