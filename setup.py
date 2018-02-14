@@ -1,7 +1,10 @@
 import os
 import sys
 import subprocess
+import json
 
+homedir = os.environ['HOME']
+#homedir[6:]
 dependencies = ['bs4', 'fuzzywuzzy', 'trakt', 'simplejson', 'feedparser']
 dependencies3 = ['discord.py', 'multidict', 'websockets']
 noRtorrent = "The program \'rtorrent\' is currently not installed. You can install it by typing:\napt install rtorrent"
@@ -37,7 +40,6 @@ def checkRutorrent():
 			raise
 
 def cronTabAdding():
-	homedir = os.environ['HOME']
 	try:
 		process = subprocess.Popen(["crontab", "-l"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		while True:
@@ -117,7 +119,31 @@ def checkForRTcontrol():
 			raise
 
 def constructVarFile():
-	pass
+	if(not os.path.isfile('vars.json')):
+		settings = {}
+		users = {}
+		systemSettings = {"script_location": "", "host_download_dir": "", "watch_dir": ""}
+		traktSettings = {"client_id": "", "secret_id": ""}
+		feedSettings = {    "HS": "http://horriblesubs.info/rss.php?res=720", "UTW": "https://nyaa.si/?page=rss&c=1_2&f=1&u=Unlimited+Translation+Works"}
+		number_of_users = input("How many users are using the script? ")
+		try:
+			for index in range(0, int(number_of_users)):
+				userString = 'user' + str(index)
+				user = {"remote_port": "", "remote_host": "", "remote_download_dir": "", "traktUserName": "", "discord_ID": "", "custom_titles": []}
+				users[userString] = user
+		except OSError as e:
+			print (type(e))
+			if e.errno == os.errno.ENOENT:
+				print ("File Not Found?")
+			else:
+				raise
+
+		settings['users'] = users
+		settings['System Settings'] = systemSettings
+		settings['Trakt Settings'] = traktSettings
+		settings['Rss Feeds'] = feedSettings
+		with open('vars.json', 'w') as fp:
+		    json.dump(settings, fp, indent=4)
 
 def getPipList():
 	try:
@@ -232,9 +258,10 @@ def installMissing3Dependicies(dependencies):
 				pass
 		rc = process.poll()
 
-#cronTabAdding()
-#checkRutorrent()
-checkForRTcontrol()
+# cronTabAdding()
+# checkRutorrent()
+# checkForRTcontrol()
+constructVarFile()
 # packages = getPipList()
 # packages3 = getPip3List()
 # theDependiciesLeft = checkList(packages)
