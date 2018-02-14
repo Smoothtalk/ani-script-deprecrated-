@@ -157,6 +157,8 @@ def checkForPips():
 				process = subprocess.Popen(["sudo", "apt", "install", "python-pip"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				output = str(process.stdout.readline(), 'utf-8')
 				error = str(process.stderr.readline(), 'utf-8')
+				print ("output: " + output)
+				print ("error: " + error)
 			else:
 				print ("Pip found on system")
 				pass
@@ -169,6 +171,8 @@ def checkForPips():
 				process = subprocess.Popen(["sudo", "apt", "install", "python3-pip"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				output = str(process.stdout.readline(), 'utf-8')
 				error = str(process.stderr.readline(), 'utf-8')
+				print ("output: " + output)
+				print ("error: " + error)
 			else:
 				print ("Pip3 found on system")
 				pass
