@@ -1,17 +1,33 @@
 import sys
 import os
-import vars
+import subprocess
+import json
+from collections import OrderedDict
 
-#Duckwad Stinx
+#python superScript.py "/home/downloads/Anime/[HorribleSubs] Just Because! - 08 [720p].mkv" "3A4038BF315EC6AE99FA073DFBF1702CEE412EF0" "[HorribleSubs] Just Because! - 08 [720p].mkv"
+#python synckkk.py "/home/seedbox/downloads/Anime/Tosh.0.S09E01.720p.HDTV.x264-MiNDTHEGAP[rarbg]" "Tosh.0.S09E01.720p.HDTV.x264-MiNDTHEGAP[rarbg]"
 
-os.chdir(vars.script_loc)
+def readJson():
+	json_data=open("vars.json").read()
+	data = json.loads(json_data, object_pairs_hook=OrderedDict)
+	return data #an OrderedDict
+
+os.chdir("./ani-script")
+settings = readJson()
+os.chdir(settings['System Settings']['script_location'])
 
 arg1 = sys.argv[1]
 arg2 = sys.argv[2]
 arg3 = sys.argv[3]
 
-#sys.argv = ['synckkk.py', arg1, arg3]
-#execfile('synckkk.py')
+try:
+    command = 'python synckkk.py \'' + arg1 + '\' \'' + arg3 + '\''
+    process = subprocess.call(command, shell=True)
+except Exception as e:
+    print "Failed to sync white show"
 
-sys.argv = ['sync.py', arg1, arg2, arg3]
-execfile('sync.py')
+try:
+	command = 'python sync.py \'' + arg1 + '\' \'' + arg2 + '\' \'' + arg3 + '\''
+	process = subprocess.call(command, shell=True)
+except Exception as e:
+    print "Failed to sync anime"
