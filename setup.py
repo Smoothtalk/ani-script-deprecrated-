@@ -305,7 +305,9 @@ if(pipsInstalled):
 		print ("All Deps of Pip installed")
 	else:
 		installMissingDependicies(theDependiciesLeft)
-cronTabAdding()
-checkRutorrent()
-checkForRTcontrol()
-constructVarFile()
+	cronTabAdding()
+	checkRutorrent()
+	checkForRTcontrol()
+	constructVarFile()
+else:
+	print ("Please install pip and pip3 and then rerun setup.py")
