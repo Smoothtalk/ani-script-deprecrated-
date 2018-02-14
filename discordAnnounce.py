@@ -7,7 +7,7 @@ import json
 import sys
 from collections import OrderedDict
 
-token = "MzU3NjA2NDQ0ODMwMjk0MDE3.DKHIMg.AWDhiu2xyLSHuRg-l0SSuiYJD5s"
+token = ""
 
 discordClient = discord.Client()
 
