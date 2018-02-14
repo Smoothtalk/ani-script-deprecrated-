@@ -3,13 +3,13 @@ import sys
 import subprocess
 import json
 
+baseFolder = '/ani-script'
 homedir = os.environ['HOME']
-#homedir[6:]
 dependencies = ['bs4', 'fuzzywuzzy', 'trakt', 'simplejson', 'feedparser']
 dependencies3 = ['discord.py', 'multidict', 'websockets']
 noRtorrent = "The program \'rtorrent\' is currently not installed. You can install it by typing:\napt install rtorrent"
-rtorrentAuto = '#system.method.set_key=event.download.finished,ascript,\"execute=python,/home/seedbox/ani-script/superScript.py,$d.get_base_path=,$d.get_hash=,$d.get_name=\"'
-cronTabData = "0,30 * * * * cd /home/seedbox/ani-script && python pull2.py > /tmp/pull2.log\n5,35 * * * * cd /home/seedbox/ani-script && python pull.py > /tmp/pull.log\n0,0 * * * 0 cd /home/seedbox/ani-script && python delete.py > /tmp/delete.log\n5,0 * * * 0 cd /home/seedbox/downloads/Anime && find -size 0 -delete\n"
+rtorrentAuto = '#system.method.set_key=event.download.finished,ascript,\"execute=python,' + homedir + '/ani-script/superScript.py,$d.get_base_path=,$d.get_hash=,$d.get_name=\"'
+cronTabData = "0,30 * * * * cd " + homedir + "/ani-script && python pull2.py > /tmp/pull2.log\n5,35 * * * * cd " + homedir + "/ani-script && python pull.py > /tmp/pull.log\n0,0 * * * 0 cd " + homedir + "/ani-script && python delete.py > /tmp/delete.log\n5,0 * * * 0 cd " + homedir + "/downloads/Anime && find -size 0 -delete\n"
 
 def checkRutorrent():
 	try:
@@ -17,7 +17,7 @@ def checkRutorrent():
 		while True:
 			output = process.stdout.readline()
 			error = process.stderr.readline()
-			print ("Rtorrent is installed")
+			print ("Rtorrent found on system")
 			os.chdir(os.path.expanduser('~'))
 			lineInFile = False
 			with open(".rtorrent.rc", "r") as ins:
@@ -70,16 +70,14 @@ def cronTabAdding():
 					if output:
 						for lines in cronList:
 							if (str(output) == 'b\'' + lines + '\\n\''):
-								print ("Line Found")
 								cronList.remove(lines)
 
 				if(len(cronList) == 0):
 					pass
-					print("all commands Found")
+					print("All Crontab commands found")
 					os.remove("cron.tmp")
 				else:
 					#one or more commands are missing
-					print ("Dank")
 					tempCron = open("cron.tmp", "a+")
 					for lines in cronList:
 						tempCron.write(lines + '\n')
@@ -105,7 +103,7 @@ def checkForRTcontrol():
 			if (output != '' or error != ''):
 				if "not found" in error:
 					print ("Rtcontrol not found on system")
-					print ("Please go to:\nhttp://pyrocore.readthedocs.io/en/latest/installation.html\nto install")
+					print ("Please go to:\nhttp://pyrocore.readthedocs.io/en/latest/installation.html to install")
 				else:
 					#rtconrol Found
 					pass
@@ -119,7 +117,7 @@ def checkForRTcontrol():
 			raise
 
 def constructVarFile():
-	if(not os.path.isfile('vars.json')):
+	if(not os.path.isfile(homedir + baseFolder + '/vars.json')):
 		settings = {}
 		users = {}
 		systemSettings = {"script_location": "", "host_download_dir": "", "watch_dir": ""}
@@ -258,19 +256,19 @@ def installMissing3Dependicies(dependencies):
 				pass
 		rc = process.poll()
 
-# cronTabAdding()
-# checkRutorrent()
-# checkForRTcontrol()
+cronTabAdding()
+checkRutorrent()
+checkForRTcontrol()
 constructVarFile()
-# packages = getPipList()
-# packages3 = getPip3List()
-# theDependiciesLeft = checkList(packages)
-# theDependicies3Left = check3List(packages3)
-# if(len(theDependicies3Left) == 0):
-# 	print ("All Deps of Pip3 installed")
-# else:
-# 	installMissing3Dependicies(theDependicies3Left)
-# if(len(theDependiciesLeft) == 0):
-# 	print ("All Deps of Pip installed")
-# else:
-# 	installMissingDependicies(theDependiciesLeft)
+packages = getPipList()
+packages3 = getPip3List()
+theDependiciesLeft = checkList(packages)
+theDependicies3Left = check3List(packages3)
+if(len(theDependicies3Left) == 0):
+	print ("All Deps of Pip3 installed")
+else:
+	installMissing3Dependicies(theDependicies3Left)
+if(len(theDependiciesLeft) == 0):
+	print ("All Deps of Pip installed")
+else:
+	installMissingDependicies(theDependiciesLeft)
