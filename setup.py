@@ -143,6 +143,12 @@ def constructVarFile():
 		with open('vars.json', 'w') as fp:
 		    json.dump(settings, fp, indent=4)
 
+#sudo: pip: command not found
+#sudo: pip3: command not found
+
+def checkForPips():
+	pass
+
 def getPipList():
 	try:
 		packages = []
@@ -256,10 +262,6 @@ def installMissing3Dependicies(dependencies):
 				pass
 		rc = process.poll()
 
-cronTabAdding()
-checkRutorrent()
-checkForRTcontrol()
-constructVarFile()
 packages = getPipList()
 packages3 = getPip3List()
 theDependiciesLeft = checkList(packages)
@@ -272,3 +274,7 @@ if(len(theDependiciesLeft) == 0):
 	print ("All Deps of Pip installed")
 else:
 	installMissingDependicies(theDependiciesLeft)
+cronTabAdding()
+checkRutorrent()
+checkForRTcontrol()
+constructVarFile()
