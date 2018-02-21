@@ -7,9 +7,8 @@ import json
 import sys
 from collections import OrderedDict
 
-token = ""
-
 discordClient = discord.Client()
+token = ''
 
 def readJson():
 	json_data=open("vars.json").read()
@@ -17,22 +16,23 @@ def readJson():
 	return data #an OrderedDict
 
 async def announce():
-    await discordClient.wait_until_ready()
-    settings = readJson()
+	await discordClient.wait_until_ready()
 
-    messagePayload = "```" + str(sys.argv[1]) + " successfully synced" + "```"
+	messagePayload = "```" + str(sys.argv[1]) + " successfully synced" + "```"
 
-    messageRecipient = await discordClient.get_user_info(settings['Users'][sys.argv[2]]['discord_ID'])
-    await discordClient.send_message(messageRecipient, messagePayload)
+	messageRecipient = await discordClient.get_user_info(settings['Users'][sys.argv[2]]['discord_ID'])
+	await discordClient.send_message(messageRecipient, messagePayload)
 
-    await discordClient.logout()
+	await discordClient.logout()
 
 @discordClient.event
 async def on_ready():
-    print('Logged in as')
-    print(discordClient.user.name)
-    print(discordClient.user.id)
-    await announce()
-    print('-------')
+	print('Logged in as')
+	print(discordClient.user.name)
+	print(discordClient.user.id)
+	await announce()
+	print('-------')
 
+settings = readJson()
+token = settings['Discord Announcer']['Token']
 discordClient.run(token)
