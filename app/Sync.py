@@ -12,7 +12,6 @@ def readJson():
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
-print(os.getcwd())
 settings = readJson()
 os.chdir(settings['System Settings']['script_location'])
 

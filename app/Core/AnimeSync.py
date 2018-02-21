@@ -83,7 +83,7 @@ def readJson():
 
 def pullMALUserData(userList):
 	for user in userList:
-		command = "python3.5 app/Tools/retMal.py " + '\"' + user + '\"'
+		command = "python3.5 Tools/retMal.py " + '\"' + user + '\"'
 		os.system(command)
 
 def getMALShows(malUserFile, user):

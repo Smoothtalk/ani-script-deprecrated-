@@ -13,19 +13,19 @@ exists = '0'
 
 if __name__ == "__main__":
     username = sys.argv[1]
-    database = "../Data/" + username + ".xml"
+    database = "Data/" + username + ".xml"
 
     url = 'http://myanimelist.net/malappinfo.php?u=' + username + '&status=watching&type=anime.xml'
     #url = 'https://currybox.ca/public/anime2.xml'
     #user_agent = 'api-indiv-7CFAF2BE04B34623771B356D83B38EC9'
     #headers = { 'User-Agent' : user_agent }
 
-    flags = open('../Data/flags', 'w')
+    flags = open('Data/flags', 'w')
     flags.write(exists)
 
     try:
         #req = urllib2.Request(url, None, headers)
-        req = (url) 
+        req = (url)
         response = urllib.request.urlopen(req)
     except urllib.error.HTTPError as e:
         if os.path.isfile(database):
