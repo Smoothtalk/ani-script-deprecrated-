@@ -54,7 +54,7 @@ class User:
 		self.discord_ID = userSettings['discord_ID']
 		self.custom_titles = userSettings['custom_titles']
 		self.MalShows = {} #titles of mal shows
-		self.malDatabaseFileName = "../Data/" + user + ".xml" #Database File name
+		self.malDatabaseFileName = "Data/" + user + ".xml" #Database File name
 
 	def getUserName(self):
 		return self.userName
@@ -77,7 +77,7 @@ class User:
 		return self.malDatabaseFileName
 
 def readJson():
-	json_data=open("../vars.json").read()
+	json_data=open("vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
@@ -129,7 +129,7 @@ def sync(syncingUser, serialToSync, match):
 		process = subprocess.check_call(command, shell=True)
 
 		os.chdir(settings['System Settings']['script_location'])
-		command = "python3.5 discordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
+		command = "python3.5 Tools/DiscordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
 		process = subprocess.call(command, shell=True)
 		hashtoFile(sys.argv[2])
 
