@@ -8,7 +8,6 @@ import time
 import subprocess
 import xml.etree.ElementTree as ET
 import multiprocessing
-from Tools import retMal
 from fuzzywuzzy import fuzz
 from multiprocessing import Process
 from collections import OrderedDict
