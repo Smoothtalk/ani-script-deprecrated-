@@ -99,7 +99,7 @@ def getTraktShows(syncUser):
 
 		# gets the episodes (change to -1 to get current season value
 		# -2 gets all teh episodes you've watched
-		fKey = dict.keys()[-2]
+		fKey = list(dict.keys())[-2]
 		values = dict[fKey]
 		last_episode_watched = values[-1]
 
@@ -127,17 +127,16 @@ def sync(settings, syncingUser, match, glob, filePath):
 			innerFileName = file
 
 		filename = match.getTitle() + " - " + 'S' + match.getSeason() + 'E' + match.getEpisode() +".mkv"
-		print filename
 		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
 		os.system(command)
 		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + filename + "'\""
 		os.system(command)
 		os.chdir(settings['System Settings']['script_location'])
-		command = "python3.5 discordAnnounce.py \'" + filename + '\' ' + syncingUser.getUserName()
+		command = "python3.5 Tools/DiscordAnnounce.py \'" + filename + '\' ' + syncingUser.getUserName()
 		process = subprocess.call(command, shell=True)
 
 	except Exception as e:
-			print e
+			print (e)
 			sys.exit(1)
 			traceback.print_stack()
 
@@ -153,5 +152,5 @@ for user in settings['Users']:
 		getTraktShows(syncingUser)
 		match = match(syncRelease, syncingUser.getShows())
 		if (match is not None):
-			print "Syncing: " + str(match.getTitle())
+			print ("Syncing: " + str(match.getTitle()))
 			sync(settings, syncingUser, syncRelease, glob, filePath)
