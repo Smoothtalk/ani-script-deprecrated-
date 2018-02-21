@@ -2,8 +2,9 @@
 
 import os
 import sys
-import urllib2
 import codecs
+import urllib.error
+import urllib.request
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 
@@ -21,13 +22,12 @@ if __name__ == "__main__":
 
     flags = open('../Data/flags', 'w')
     flags.write(exists)
-    flags.seek(-1,1)
 
     try:
         #req = urllib2.Request(url, None, headers)
-		req = urllib2.Request(url, None)
-		response = urllib2.urlopen(req)
-    except urllib2.HTTPError,err:
+        req = (url) 
+        response = urllib.request.urlopen(req)
+    except urllib.error.HTTPError as e:
         if os.path.isfile(database):
             exists = '1'
             flags.write(exists)
