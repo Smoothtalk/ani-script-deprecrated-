@@ -12,7 +12,7 @@ def readJson():
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
-os.chdir("./ani-script")
+print(os.getcwd())
 settings = readJson()
 os.chdir(settings['System Settings']['script_location'])
 
@@ -20,14 +20,15 @@ arg1 = sys.argv[1]
 arg2 = sys.argv[2]
 arg3 = sys.argv[3]
 
-try:
-    command = 'python synckkk.py \'' + arg1 + '\' \'' + arg3 + '\''
-    process = subprocess.call(command, shell=True)
-except Exception as e:
-    print "Failed to sync white show"
+# try:
+#     command = 'python synckkk.py \'' + arg1 + '\' \'' + arg3 + '\''
+#     process = subprocess.call(command, shell=True)
+# except Exception as e:
+#     print "Failed to sync white show"
 
 try:
-	command = 'python sync.py \'' + arg1 + '\' \'' + arg2 + '\' \'' + arg3 + '\''
+	command = 'python3.5 Core/AnimeSync.py \'' + arg1 + '\' \'' + arg2 + '\' \'' + arg3 + '\''
 	process = subprocess.call(command, shell=True)
 except Exception as e:
-    print "Failed to sync anime"
+	print (e)
+	print ("Failed to sync anime")
