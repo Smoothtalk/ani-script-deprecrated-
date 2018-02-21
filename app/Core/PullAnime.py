@@ -66,7 +66,7 @@ class anime():
 		return self.last_watched
 
 def readJson():
-	json_data=open("vars.json").read()
+	json_data=open("../vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
@@ -79,8 +79,10 @@ def getSeriesTitle(fileName):
 
 def pullMALUserData(userList):
 	for user in userList:
-		command = "python retMal.py " + '\"' + user + '\"'
+		os.chdir('../')
+		command = "python3.5 Tools/retMal.py " + '\"' + user + '\"'
 		os.system(command)
+		os.chdir('Core/')
 
 def checkDupes(animeTitle, showList):
 	allTitle = []
@@ -98,7 +100,7 @@ def generateUserObjects(users):
 	userList = []
 
 	for user in users:
-		dataBaseFileName = user + ".xml"
+		dataBaseFileName = "../Data/" + user + ".xml"
 		newUser = userClass()
 		newUser.setUserName(user)
 		newUser.setCustom_Titles(users[user]['custom_titles'])
@@ -158,9 +160,9 @@ def getAllUniqueMALShows(users):
 			if(checkDupes(tempAnime.getTitle(), allShows)):
 				allShows.append(tempAnime)
 
-	print "Length of all shows(dupes included): " + str(len(allShows))
+	print ("Length of all shows(dupes included): " + str(len(allShows)))
 	allShows = list(set(allShows)) #Removes dupes from list
-	print "Length of all shows(incl custom title, no dupes): " + str(len(allShows))
+	print ("Length of all shows(incl custom title, no dupes): " + str(len(allShows)))
 	return allShows
 
 def getMatches(releases, allShows, matches):
@@ -186,7 +188,7 @@ def makeMagnets(matches):
 	nextWeek = currDate + datetime.timedelta(days=7)
 
 	for matchedShow in matches:
-		print matchedShow.title
+		print (matchedShow.title)
 		title = matchedShow.title
 		url = matchedShow.link
 
@@ -219,9 +221,6 @@ def getFeeds(Rss_Feeds):
 
 	return feedList
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
 settings = readJson()
 
 #pull updated user list from Mal. not /really/ required, but w/e
@@ -236,6 +235,6 @@ for url in feedUrls:
 		feed = feedparser.parse(url)
 		releases = feed.get('entries')
 		matches = getMatches(releases, allShows, matches)
-		makeMagnets(matches)
+		# makeMagnets(matches)
 
-print "Length of matches: " + str(len(matches))
+print ("Length of matches: " + str(len(matches)))
