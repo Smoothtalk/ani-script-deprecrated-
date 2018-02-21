@@ -2,13 +2,13 @@
 
 import sys
 import os
-import retMal
 import linecache
 import json
 import time
 import subprocess
 import xml.etree.ElementTree as ET
 import multiprocessing
+from Tools import retMal
 from fuzzywuzzy import fuzz
 from multiprocessing import Process
 from collections import OrderedDict
@@ -55,7 +55,7 @@ class User:
 		self.discord_ID = userSettings['discord_ID']
 		self.custom_titles = userSettings['custom_titles']
 		self.MalShows = {} #titles of mal shows
-		self.malDatabaseFileName = user + ".xml" #Database File name
+		self.malDatabaseFileName = "../Data/" + user + ".xml" #Database File name
 
 	def getUserName(self):
 		return self.userName
@@ -71,20 +71,20 @@ class User:
 		return self.custom_titles
 	def addMalShow(self, malShow, episodesWatched):
 		newShow = {malShow: {'episodesWatched': episodesWatched}}
-	 	self.MalShows.update(newShow)
+		self.MalShows.update(newShow)
 	def getMalShows(self):
 		return self.MalShows
 	def getMalDatabaseFileName(self):
 		return self.malDatabaseFileName
 
 def readJson():
-	json_data=open("vars.json").read()
+	json_data=open("../vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
 def pullMALUserData(userList):
 	for user in userList:
-		command = "python retMal.py " + '\"' + user + '\"'
+		command = "python ../Tools/retMal.py " + '\"' + user + '\"'
 		os.system(command)
 
 def getMALShows(malUserFile, user):
@@ -122,7 +122,7 @@ def getMatch(malShows, serialToSync):
 	return match
 
 def sync(syncingUser, serialToSync, match):
-	print "Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName()
+	print ("Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName())
 	if (int(serialToSync.getSeriesEpisode()) > int(match['episodesWatched'])):
 		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
 		process = subprocess.check_call(command, shell=True)
@@ -169,4 +169,4 @@ if __name__=='__main__':
 				p.start()
 
 	except Exception as e:
-		print e
+		print (e)

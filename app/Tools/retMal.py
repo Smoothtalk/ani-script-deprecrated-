@@ -12,14 +12,14 @@ exists = '0'
 
 if __name__ == "__main__":
     username = sys.argv[1]
-    database = username + ".xml"
+    database = "../Data/" + username + ".xml"
 
     url = 'http://myanimelist.net/malappinfo.php?u=' + username + '&status=watching&type=anime.xml'
     #url = 'https://currybox.ca/public/anime2.xml'
     #user_agent = 'api-indiv-7CFAF2BE04B34623771B356D83B38EC9'
     #headers = { 'User-Agent' : user_agent }
 
-    flags = open('flags', 'w')
+    flags = open('../Data/flags', 'w')
     flags.write(exists)
     flags.seek(-1,1)
 
