@@ -169,19 +169,19 @@ def getMatches(releases, allShows, matches):
 	for release in releases:
 		seriesTitle = getSeriesTitle(release.title)
 		for show in allShows:
-			if(fuzz.ratio(show.getTitle().decode('utf-8'), seriesTitle) > FUZZ_RATIO):
+			if(fuzz.ratio(show.getTitle(), seriesTitle) > FUZZ_RATIO):
 				if (len(show.getTitle()) != 1): #DARN 'K' ANIME MESSING EVERYTHING UP, since the title splitter on line 130 picks up only 'k' as the title
 					matches.append(release) #it matches any anime title with 'k' in it
 			elif(len(show.getAlt_titles()) > 0):
 				for altTitle in show.getAlt_titles():
-					if(fuzz.ratio(altTitle.decode('utf-8'), seriesTitle) > FUZZ_RATIO):
+					if(fuzz.ratio(altTitle, seriesTitle) > FUZZ_RATIO):
 						matches.append(release)
 						pass
 
 	return matches
 
 def makeMagnets(matches):
-	tidfile = open('tidfile', 'a+') #stores torrent tids so that they wont download again
+	tidfile = open('../Data/tidfile', 'a+') #stores torrent tids so that they wont download again
 	existingTIDs = tidfile.read().split("\n")
 	currDate = datetime.datetime.strptime(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S") #getting today with out stupid microseconds
 	lastWeek = currDate - datetime.timedelta(days=7)
@@ -193,7 +193,7 @@ def makeMagnets(matches):
 		url = matchedShow.link
 
 		pubDate = matchedShow.published[:-6]
-		datetime_publish = datetime.datetime.strptime(pubDate.encode("utf-8"), '%a, %d %b %Y %H:%M:%S')
+		datetime_publish = datetime.datetime.strptime(pubDate, '%a, %d %b %Y %H:%M:%S')
 
 		if(lastWeek <= datetime_publish <= nextWeek):
 			if ".torrent" in url: #Nyaa RSS
@@ -235,6 +235,6 @@ for url in feedUrls:
 		feed = feedparser.parse(url)
 		releases = feed.get('entries')
 		matches = getMatches(releases, allShows, matches)
-		# makeMagnets(matches)
+		makeMagnets(matches)
 
 print ("Length of matches: " + str(len(matches)))
