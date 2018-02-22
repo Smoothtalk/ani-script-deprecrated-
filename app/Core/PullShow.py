@@ -2,7 +2,6 @@
 
 import sys
 import os
-import retMal
 import linecache
 import re
 import codecs
@@ -10,10 +9,10 @@ import glob
 import json
 import xml.etree.ElementTree as ET
 import multiprocessing
-import urllib2
+import urllib.error
+import urllib.request
 import simplejson as json
 from fuzzywuzzy import fuzz
-from urllib2 import Request, urlopen
 from trakt.users import User
 from multiprocessing import Process
 from bs4 import BeautifulSoup
@@ -39,7 +38,7 @@ class TvShow():
 		return self.last_watched_episode
 
 def readJson():
-	json_data=open("vars.json").read()
+	json_data=open("../vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
@@ -47,9 +46,9 @@ def getToken():
 	getTokenURL = "https://torrentapi.org/pubapi_v2.php?get_token=get_token"
 
 	try:
-		req = urllib2.Request(getTokenURL, None)
-		req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36')
-		response = urllib2.urlopen(req)
+		hdr = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36'}
+		req = urllib.request.Request(getTokenURL, headers=hdr)
+		response = urllib.request.urlopen(req)
 
 		soup = BeautifulSoup(response.read(), "html.parser")
 		soup2 = soup.prettify()
@@ -57,8 +56,8 @@ def getToken():
 		token = soup2[10:-3]
 
 		return token
-	except urllib2.HTTPError,err:
-		print err
+	except urllib.error.HTTPError as e:
+		print (e)
 
 def searchTVTorrents(token, database):
 	#category 41 is hdtv episodes
@@ -66,9 +65,9 @@ def searchTVTorrents(token, database):
 	requestURL = listTorrentsURL + token
 
 	try:
-		req = urllib2.Request(requestURL, None)
-		req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36')
-		response = urllib2.urlopen(req)
+		hdr = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36'}
+		req = urllib.request.Request(requestURL, headers=hdr)
+		response = urllib.request.urlopen(req)
 
 		soup = BeautifulSoup(response.read(), "html.parser")
 		soup2 = soup.prettify()
@@ -77,8 +76,8 @@ def searchTVTorrents(token, database):
 		output.write(soup2)
 		output.close()
 
-	except urllib2.HTTPError,err:
-		print err
+	except urllib.error.HTTPError as e:
+		print (e)
 
 def fixMagnet(magnet):
 	magnet = magnet.strip()
@@ -111,7 +110,7 @@ def getShowDict(torrent_title):
 
 		return data
 	except Exception as e:
-		print str(torrent_title) + " fucked it all up"
+		#print (str(torrent_title) + " fucked it all up")
 		data['Title'] = ""
 		data['Season'] = -1
 		data['Episode'] = -1
@@ -122,12 +121,13 @@ def getTraktShows():
 	my = User(settings['Users']['Smoothtalk']['traktUserName'])
 
 	for y in range(len(my.watched_shows)):
-		dict = my.watched_shows[y].seasons[-1]
+		theDict = my.watched_shows[y].seasons[-1]
 
 		# gets the episodes (change to -1 to get current season value
 		# -2 gets all teh episodes you've watched
-		fKey = dict.keys()[-2]
-		values = dict[fKey]
+		#TODO FIX THIS SHIT
+		values = theDict['episodes']
+		print (values)
 		last_episode_watched = values[-1]
 
 		episode_Number =  last_episode_watched['number']
@@ -172,7 +172,7 @@ def compare(allShows, settings, matches):
 						epititle = showDict['Title'] + '-S' + showDict['Season'] + 'E' + showDict['Episode']
 
 						if epititle not in alreadyDLShows:
-							print "Downloading"
+							print ("Downloading")
 							fileWithQuotes = '"' + showDict['Title'].strip() + " - " + 'S' + showDict['Season'] + 'E' + showDict['Episode'] + ".torrent" + '"'
 
 							matchDict = {'File': fileWithQuotes}
