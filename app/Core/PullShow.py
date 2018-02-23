@@ -125,9 +125,8 @@ def getTraktShows():
 
 		# gets the episodes (change to -1 to get current season value
 		# -2 gets all teh episodes you've watched
-		#TODO FIX THIS SHIT
+		#MIGHT NOT WORK
 		values = theDict['episodes']
-		print (values)
 		last_episode_watched = values[-1]
 
 		episode_Number =  last_episode_watched['number']
