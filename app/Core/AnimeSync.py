@@ -135,7 +135,7 @@ def sync(syncingUser, serialToSync, match):
 
 def hashtoFile(theHash):
 	os.chdir(settings['System Settings']['script_location'])
-	completed = open("completed.txt", "a")
+	completed = open("Data/completed.txt", "a")
 	completed.write(theHash)
 	completed.write('\n')
 	completed.close()

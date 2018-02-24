@@ -190,7 +190,7 @@ def generateMagnets(matches):
 settings = readJson()
 os.chdir(settings['System Settings']['script_location'])
 
-database = "RarBG" + ".json"
+database = "../Data/RarBG" + ".json"
 matches = []
 
 token = getToken()
