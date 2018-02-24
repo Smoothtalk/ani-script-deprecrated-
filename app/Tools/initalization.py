@@ -7,7 +7,7 @@ baseFolder = '/ani-script/app'
 homedir = os.environ['HOME']
 noRtorrent = "The program \'rtorrent\' is currently not installed. You can install it by typing:\napt install rtorrent"
 rtorrentAuto = '#system.method.set_key=event.download.finished,ascript,\"execute=python3.5,' + homedir + '/ani-script/app/Sync.py,$d.get_base_path=,$d.get_hash=,$d.get_name=\"'
-cronTabData = "0,30 * * * * cd " + homedir + "/ani-script/app/Core && python3.5 PullAnime.py > /tmp/AnimePull.log\n5,35 * * * * cd " + homedir + "/ani-script/app/Core && python3.5 PullShow.py > /tmp/ShowPull.log\n0,0 * * * 0 cd " + homedir + "/ani-script/app/Tools && python DeleteFiles.py > /tmp/Delete.log\n5,0 * * * 0 cd " + homedir + "/downloads/Anime && find -size 0 -delete\n"
+cronTabData = "0,30 * * * * cd " + homedir + "/ani-script/app/Core && python3.5 PullAnime.py > /tmp/AnimePull.log\n5,35 * * * * cd " + homedir + "/ani-script/app/Core && python3.5 PullShow.py > /tmp/ShowPull.log\n0,0 * * * 0 cd " + homedir + "/ani-script/app/Tools && python3.5 DeleteFiles.py > /tmp/Delete.log\n5,0 * * * 0 cd " + homedir + "/downloads/Anime && find -size 0 -delete\n"
 
 def checkRutorrent():
 	try:

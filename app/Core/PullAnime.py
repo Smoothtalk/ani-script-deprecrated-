@@ -199,15 +199,15 @@ def makeMagnets(matches):
 			if ".torrent" in url: #Nyaa RSS
 					tid = str(url[25:31])
 					fileWithQuotes = '"' + tid + ".torrent" + '"'
-					# command = "wget \'" + url + '\''
+					command = "wget \'" + url + '\''
 					command = ""
 			else: #HS RSS
 				tid = str(url[20:52])
 				fileWithQuotes = '"' + title + ".torrent" + '"'
-				# command = "python Magnet_To_Torrent2.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
+				command = "python3.5 ../Tools/Magnet2Torrent.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
 
 		if tid not in existingTIDs: #if tid doesn't already exist, download
-			# os.system(command)
+			os.system(command)
 			command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
 			os.system(command)
 			tidfile.write(tid+"\n")
