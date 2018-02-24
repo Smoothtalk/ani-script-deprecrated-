@@ -2,18 +2,13 @@
 
 import sys
 import os
-import linecache
 import re
 import json
-import codecs
 import glob
-import xml.etree.ElementTree as ET
-import multiprocessing
 import traceback
 import subprocess
 from trakt.users import User
 from fuzzywuzzy import fuzz
-from multiprocessing import Process
 from collections import OrderedDict
 
 FUZZ_RATIO = 70

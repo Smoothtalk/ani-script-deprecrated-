@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
-import feedparser
 import sys
 import os
 import json
 import datetime
+import feedparser
 import urllib
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
