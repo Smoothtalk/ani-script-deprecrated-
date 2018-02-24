@@ -1,20 +1,14 @@
 #!/usr/bin/python
 
-import sys
 import os
-import linecache
 import re
 import codecs
-import glob
 import json
-import xml.etree.ElementTree as ET
-import multiprocessing
 import urllib.error
 import urllib.request
 import simplejson as json
 from fuzzywuzzy import fuzz
 from trakt.users import User
-from multiprocessing import Process
 from bs4 import BeautifulSoup
 from collections import OrderedDict
 
