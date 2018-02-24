@@ -3,7 +3,7 @@ import sys
 import subprocess
 import json
 
-baseFolder = '/ani-script'
+baseFolder = '/ani-script/app'
 homedir = os.environ['HOME']
 noRtorrent = "The program \'rtorrent\' is currently not installed. You can install it by typing:\napt install rtorrent"
 rtorrentAuto = '#system.method.set_key=event.download.finished,ascript,\"execute=python,' + homedir + '/ani-script/superScript.py,$d.get_base_path=,$d.get_hash=,$d.get_name=\"'
