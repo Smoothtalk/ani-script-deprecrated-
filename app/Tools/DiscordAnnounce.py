@@ -1,7 +1,5 @@
 import asyncio
 import os
-import random
-import datetime
 import discord
 import json
 import sys
@@ -35,4 +33,7 @@ async def on_ready():
 
 settings = readJson()
 token = settings['Discord Announcer']['Token']
-discordClient.run(token)
+if(token != ''):
+	discordClient.run(token)
+else:
+	sys.exit(0)
