@@ -120,7 +120,7 @@ def constructVarFile():
 		users = {}
 		systemSettings = {"script_location": "", "host_download_dir": "", "watch_dir": ""}
 		traktSettings = {"client_id": "", "secret_id": ""}
-		feedSettings = {    "HS": "http://horriblesubs.info/rss.php?res=720", "UTW": "https://nyaa.si/?page=rss&c=1_2&f=1&u=Unlimited+Translation+Works"}
+		feedSettings = {"HS": "http://horriblesubs.info/rss.php?res=720", "UTW": "https://nyaa.si/?page=rss&c=1_2&f=1&u=Unlimited+Translation+Works"}
 		number_of_users = input("How many users are using the script? ")
 		try:
 			for index in range(0, int(number_of_users)):
