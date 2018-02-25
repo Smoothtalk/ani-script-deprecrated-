@@ -181,8 +181,10 @@ def getMatches(releases, allShows, matches):
 	return matches
 
 def makeMagnets(matches):
-	tidfile = open('../Data/tidfile', 'a+') #stores torrent tids so that they wont download again
+	tidfile = open('../Data/tidfile', 'r+') #stores torrent tids so that they wont download again
 	existingTIDs = tidfile.read().split("\n")
+	tidfile.close()
+
 	currDate = datetime.datetime.strptime(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S") #getting today with out stupid microseconds
 	lastWeek = currDate - datetime.timedelta(days=7)
 	nextWeek = currDate + datetime.timedelta(days=7)
@@ -204,12 +206,13 @@ def makeMagnets(matches):
 			else: #HS RSS
 				tid = str(url[20:52])
 				fileWithQuotes = '"' + title + ".torrent" + '"'
-				command = "python3.5 ../Tools/Magnet2Torrent.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
+				command = "python ../Tools/Magnet2Torrent.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
 
 		if tid not in existingTIDs: #if tid doesn't already exist, download
 			os.system(command)
 			command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
 			os.system(command)
+			tidfile = open('../Data/tidfile', 'a+') #stores torrent tids so that they wont download again
 			tidfile.write(tid+"\n")
 	tidfile.close()
 
