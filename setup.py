@@ -20,6 +20,7 @@ setup(name='ani-script',
       'feedparser',
       'fuzzywuzzy',
       'python-Levenshtein',
+      'python-libtorrent',
       'simplejson',
       'trakt'
       ],
