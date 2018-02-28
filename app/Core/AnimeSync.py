@@ -2,9 +2,7 @@
 
 import sys
 import os
-import linecache
 import json
-import time
 import subprocess
 import xml.etree.ElementTree as ET
 import multiprocessing
