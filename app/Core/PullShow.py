@@ -110,27 +110,28 @@ def getShowDict(torrent_title):
 		data['Episode'] = -1
 		return data
 
-def getTraktShows():
+def getTraktShows(settings):
 	allShows = []
-	my = User(settings['Users']['Smoothtalk']['traktUserName'])
+	for users in settings['Users']:
+		my = User(settings['Users']users['traktUserName'])
 
-	for y in range(len(my.watched_shows)):
-		theDict = my.watched_shows[y].seasons[-1]
+		for y in range(len(my.watched_shows)):
+			theDict = my.watched_shows[y].seasons[-1]
 
-		# gets the episodes (change to -1 to get current season value
-		# -2 gets all teh episodes you've watched
-		#MIGHT NOT WORK
-		values = theDict['episodes']
-		last_episode_watched = values[-1]
+			# gets the episodes (change to -1 to get current season value
+			# -2 gets all teh episodes you've watched
+			#MIGHT NOT WORK
+			values = theDict['episodes']
+			last_episode_watched = values[-1]
 
-		episode_Number =  last_episode_watched['number']
-		date_Watched_At = last_episode_watched['last_watched_at']
+			episode_Number =  last_episode_watched['number']
+			date_Watched_At = last_episode_watched['last_watched_at']
 
-		traktShow = TvShow();
-		traktShow.setTitle(my.watched_shows[y])
-		traktShow.setLast_watched_date(date_Watched_At)
-		traktShow.setlast_watched_episode(episode_Number)
-		allShows.append(traktShow)
+			traktShow = TvShow();
+			traktShow.setTitle(my.watched_shows[y])
+			traktShow.setLast_watched_date(date_Watched_At)
+			traktShow.setlast_watched_episode(episode_Number)
+			allShows.append(traktShow)
 
 	return allShows
 
