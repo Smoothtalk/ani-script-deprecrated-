@@ -142,7 +142,19 @@ def constructVarFile():
 		    json.dump(settings, fp, indent=4)
 
 def initalizeSSHKeys():
-	pass
+	json_data=open("../Data/vars.json").read()
+	settings = json.loads(json_data, object_pairs_hook=OrderedDict)
+
+	for user in settings['Users']:
+		if(user['remote_host'] != ""):
+			try:
+				process = subprocess.Popen(["./sshKeyGen.sh", str(user['remote_host']), int(user['remote_port'])], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				while True:
+					output = process.stdout.readline()
+					error = process.stderr.readline()
+					if str(stderr.strip()) != "":
+						print ("Something went wrong")
+						break
 
 cronTabAdding()
 checkRutorrent()
