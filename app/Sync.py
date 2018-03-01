@@ -20,13 +20,13 @@ arg2 = sys.argv[2]
 arg3 = sys.argv[3]
 
 try:
-    command = 'python3.5 Core/ShowSync.py \'' + arg1 + '\' \'' + arg3 + '\''
+    command = 'python3.5 Core/SyncShow.py \'' + arg1 + '\' \'' + arg3 + '\''
     process = subprocess.call(command, shell=True)
 except Exception as e:
     print ("Failed to sync white show")
 
 try:
-	command = 'python3.5 Core/AnimeSync.py \'' + arg1 + '\' \'' + arg2 + '\' \'' + arg3 + '\''
+	command = 'python3.5 Core/SyncAnime.py \'' + arg1 + '\' \'' + arg2 + '\' \'' + arg3 + '\''
 	process = subprocess.call(command, shell=True)
 except Exception as e:
 	print (e)
