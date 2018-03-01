@@ -125,7 +125,7 @@ def constructVarFile():
 		try:
 			for index in range(0, int(number_of_users)):
 				userString = 'user' + str(index)
-				user = {"remote_port": "", "remote_host": "", "remote_download_dir": "", "traktUserName": "", "discord_ID": "", "custom_titles": []}
+				user = {"remote_port": "22", "remote_host": "", "remote_download_dir": "", "traktUserName": "", "discord_ID": "", "custom_titles": []}
 				users[userString] = user
 		except OSError as e:
 			print (type(e))
@@ -141,7 +141,11 @@ def constructVarFile():
 		with open('vars.json', 'w') as fp:
 		    json.dump(settings, fp, indent=4)
 
+def initalizeSSHKeys():
+	pass
+
 cronTabAdding()
 checkRutorrent()
 checkForRTcontrol()
 constructVarFile()
+initalizeSSHKeys()
