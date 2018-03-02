@@ -124,7 +124,7 @@ def sync(settings, syncingUser, match, glob, filePath):
 		filename = match.getTitle() + " - " + 'S' + match.getSeason() + 'E' + match.getEpisode() +".mkv"
 		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
 		os.system(command)
-		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + filename + "'\""
+		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + '/' + filename + "'\""
 		os.system(command)
 		os.chdir(settings['System Settings']['script_location'])
 		command = "python3.5 Tools/DiscordAnnounce.py \'" + filename + '\' ' + syncingUser.getUserName()
