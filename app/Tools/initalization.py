@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import json
+from collections import OrderedDict
 
 baseFolder = '/ani-script/app'
 homedir = os.environ['HOME']
@@ -134,27 +135,32 @@ def constructVarFile():
 			else:
 				raise
 
-		settings['users'] = users
+		settings['Users'] = users
 		settings['System Settings'] = systemSettings
 		settings['Trakt Settings'] = traktSettings
 		settings['Rss Feeds'] = feedSettings
 		with open('vars.json', 'w') as fp:
-		    json.dump(settings, fp, indent=4)
+			json.dump(settings, fp, indent=4)
 
 def initalizeSSHKeys():
-	json_data=open("../Data/vars.json").read()
-	settings = json.loads(json_data, object_pairs_hook=OrderedDict)
+	os.chdir(homedir + "/ani-script/app")
+	json_data=open("vars.json").read()
+	settings=json.loads(json_data, object_pairs_hook=OrderedDict)
 
 	for user in settings['Users']:
-		if(user['remote_host'] != ""):
+		if(settings['Users'][user]['remote_host'] != ""):
 			try:
-				process = subprocess.Popen(["./sshKeyGen.sh", str(user['remote_host']), int(user['remote_port'])], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-				while True:
-					output = process.stdout.readline()
-					error = process.stderr.readline()
-					if str(stderr.strip()) != "":
-						print ("Something went wrong")
-						break
+				host = str(settings['Users'][user]['remote_host'])
+				port = str(settings['Users'][user]['remote_port'])
+				command = "Tools/sshKeyGen.sh '" + host + "' '" + port + "'"
+				os.system(command)
+
+			except OSError as e:
+				print (type(e))
+				if e.errno == os.errno.ENOENT:
+					print ("File Not Found?")
+				else:
+					raise
 
 cronTabAdding()
 checkRutorrent()
