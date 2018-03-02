@@ -16,5 +16,6 @@ my_client_id = settings['Trakt Settings']['client_id']
 my_client_secret = settings['Trakt Settings']['secret_id']
 
 for user in settings['Users']:
-	tracktUserName = settings['Users'][user]['traktUserName']
-	init(tracktUserName, client_id=my_client_id, client_secret=my_client_secret, store=True)
+	if (settings['Users'][user]['traktUserName'] != ""):
+		tracktUserName = settings['Users'][user]['traktUserName']
+		init(tracktUserName, client_id=my_client_id, client_secret=my_client_secret, store=True)
