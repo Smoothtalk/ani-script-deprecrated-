@@ -123,7 +123,7 @@ def sync(syncingUser, serialToSync, match):
 	if (int(serialToSync.getSeriesEpisode()) > int(match['episodesWatched'])):
 		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
 		process = subprocess.check_call(command, shell=True)
-		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() +  sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + serialToSync.getFileName() + "'\""
+		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFileName() + "'\""
 		process = subprocess.check_call(command, shell=True)
 
 		os.chdir(settings['System Settings']['script_location'])
