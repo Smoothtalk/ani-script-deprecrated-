@@ -119,7 +119,7 @@ def constructVarFile():
 	if(not os.path.isfile(homedir + baseFolder + '/vars.json')):
 		settings = {}
 		users = {}
-		systemSettings = {"script_location": "", "host_download_dir": "", "watch_dir": ""}
+		systemSettings = {"script_location": "", "host_download_dir": "", "watch_dir": "", "individual folders": "True"}
 		traktSettings = {"client_id": "", "secret_id": ""}
 		feedSettings = {"HS": "http://horriblesubs.info/rss.php?res=720", "UTW": "https://nyaa.si/?page=rss&c=1_2&f=1&u=Unlimited+Translation+Works"}
 		number_of_users = input("How many users are using the script? ")

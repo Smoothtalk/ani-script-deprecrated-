@@ -121,11 +121,18 @@ def getMatch(malShows, serialToSync):
 def sync(syncingUser, serialToSync, match):
 	print ("Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName())
 	if (int(serialToSync.getSeriesEpisode()) > int(match['episodesWatched'])):
-		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
-		process = subprocess.check_call(command, shell=True)
-		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFileName() + "'\""
-		process = subprocess.check_call(command, shell=True)
-
+		if(settings['System Settings']['individual folders'] == "True")
+			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " mkdir -p " + syncingUser.getRemote_Download_Dir() + '/' +  serialToSync.getSeriesName()
+			process = subprocess.check_call(command, shell=True)
+			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + "\""
+			process = subprocess.check_call(command, shell=True)
+			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + '/' + sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + '/' + serialToSync.getFileName() + "'\""
+			process = subprocess.check_call(command, shell=True)
+		elif(settings['System Settings']['individual folders'] == "False")
+			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
+			process = subprocess.check_call(command, shell=True)
+			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFileName() + "'\""
+			process = subprocess.check_call(command, shell=True)			
 		os.chdir(settings['System Settings']['script_location'])
 		command = "python3.5 Tools/DiscordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
 		process = subprocess.call(command, shell=True)
