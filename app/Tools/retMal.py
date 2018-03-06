@@ -35,7 +35,7 @@ if __name__ == "__main__":
         output.write(soup2)
         output.close()
 
-        with open(database, 'rt') as f:
+        with open(database, 'rt', encoding='utf-8') as f:
             tree = ET.parse(f)
 
             for node in tree.findall('.//myinfo'):

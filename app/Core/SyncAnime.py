@@ -85,7 +85,7 @@ def pullMALUserData(userList):
 		os.system(command)
 
 def getMALShows(malUserFile, user):
-	with open(malUserFile, 'rt') as f:
+	with open(malUserFile, 'rt', encoding='utf-8') as f:
 		tree = ET.parse(f)
 
 		for node in tree.findall('.//anime'):
