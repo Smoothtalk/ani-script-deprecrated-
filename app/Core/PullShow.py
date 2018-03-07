@@ -6,10 +6,11 @@ import codecs
 import json
 import urllib.error
 import urllib.request
+import trakt
 import simplejson as json
 from fuzzywuzzy import fuzz
-from trakt.users import User
 from bs4 import BeautifulSoup
+from trakt.users import User
 from collections import OrderedDict
 
 class TvShow():
@@ -112,8 +113,9 @@ def getShowDict(torrent_title):
 
 def getTraktShows(settings):
 	allShows = []
-	for users in settings['Users']:
-		my = User(settings['Users']users['traktUserName'])
+	for user in settings['Users']:
+		user = "Smoothtalk"
+		my = User(settings['Users'][user]['traktUserName'])
 
 		for y in range(len(my.watched_shows)):
 			theDict = my.watched_shows[y].seasons[-1]
@@ -157,7 +159,7 @@ def compare(allShows, settings, matches):
 						# print title.strip() + " - " + 'S' + season[0] + 'E' + episode[0] + ".mkv"
 					# except:
 						# print "unable to title, shitty scene groups"
-					if(fuzz.ratio(str(i.getTitle())[9:].lower(), showDict['Title'].lower()) > 70 and showDict['Episode'] > i.getlast_watched_episode):
+					if (fuzz.ratio(str(i.getTitle())[9:].lower(), showDict['Title'].lower()) > 70 and int(showDict['Episode']) > i.getlast_watched_episode()):
 						regex = r"id=.*.="
 
 						dledShowsFile = open('dledshows', 'a+')
@@ -183,7 +185,7 @@ def generateMagnets(matches):
 	for show in matches:
 		# command = "python Magnet_To_Torrent2.py -m " + '"' + show['Magnet'] + '"' + " -o " + show['File']
 		# os.system(command)
-        #
+		#
 		# command = "mv " + show['File'] + ' ' + settings['System Settings']['watch_dir']
 		command = "echo \"it worked\""
 		os.system(command)
@@ -191,11 +193,11 @@ def generateMagnets(matches):
 settings = readJson()
 os.chdir(settings['System Settings']['script_location'])
 
-database = "../Data/RarBG" + ".json"
+database = "Data/RarBG" + ".json"
 matches = []
 
 token = getToken()
 searchTVTorrents(token, database)
-allShows = getTraktShows()
+allShows = getTraktShows(settings)
 compare(allShows, settings, matches)
 generateMagnets(matches)
