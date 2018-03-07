@@ -124,11 +124,21 @@ def sync(settings, syncingUser, match, glob, filePath):
 		for file in glob.glob("*.mkv"):
 			innerFileName = file
 
-		filename = match.getTitle() + " - " + 'S' + match.getSeason() + 'E' + match.getEpisode() +".mkv"
-		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
-		os.system(command)
-		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + '/' + filename + "'\""
-		os.system(command)
+		filename = match.getTitle() + " - " + 'S' + match.getSeason() + 'E' + match.getEpisode() + ".mkv"
+		if(settings['System Settings']['individual folders'] == "True"):
+			seriesFolder = (match.getTitle() + '/' + "Season " + match.getSeason())
+			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mkdir -p " + syncingUser.getRemote_Download_Dir() + seriesFolder.replace(" ", "\ ") + '"'
+			os.system(command)
+			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + seriesFolder.replace(" ", "\ ") + "\""
+			os.system(command)
+			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mv '" + syncingUser.getRemote_Download_Dir() + seriesFolder + '/' + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + seriesFolder + '/' + filename + "'\""
+			os.system(command)
+		elif(settings['System Settings']['individual folders'] == "False"):
+			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
+			os.system(command)
+			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + '/' + filename + "'\""
+			os.system(command)
+
 		os.chdir(settings['System Settings']['script_location'])
 		command = "python3.5 Tools/DiscordAnnounce.py \'" + filename + '\' ' + syncingUser.getUserName()
 		process = subprocess.call(command, shell=True)
