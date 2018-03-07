@@ -90,12 +90,15 @@ def getTraktShows(syncUser):
 	my = User(syncUser.getTraktUserName())
 
 	for y in range(len(my.watched_shows)):
-		dict = my.watched_shows[y].seasons[-1]
+		theDict = my.watched_shows[y].seasons[-1]
 
-		# gets the episodes (change to -1 to get current season value
-		# -2 gets all teh episodes you've watched
-		fKey = list(dict.keys())[-2]
-		values = dict[fKey]
+		# # gets the episodes (change to -1 to get current season value
+		# # -2 gets all teh episodes you've watched
+		fKey = list(theDict.keys())[-2]
+		#dictionaries change the first value on a whim, sometimes its episodes sometimes its numbers
+		if(fKey == "number"):
+			fKey = list(theDict.keys())[-1]
+		values = theDict[fKey]
 		last_episode_watched = values[-1]
 
 		episode_Number =  last_episode_watched['number']
