@@ -8,7 +8,7 @@ from collections import OrderedDict
 #python synckkk.py "/home/downloads/Anime/Mr.Robot.S03E10.720p.HDTV.x264-KILLERS[rarbg]" "Mr.Robot.S03E10.720p.HDTV.x264-KILLERS[rarbg]"
 
 def readJson():
-	json_data=open("vars.json").read()
+	json_data=open("ani-script/app/vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
