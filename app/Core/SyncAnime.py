@@ -11,6 +11,7 @@ from multiprocessing import Process
 from collections import OrderedDict
 
 FUZZ_RATIO = 70
+validFileExtensions = ['.mkv', '.avi', '.mp4']
 
 class Series:
 	seriesName = ""
@@ -74,6 +75,12 @@ class User:
 	def getMalDatabaseFileName(self):
 		return self.malDatabaseFileName
 
+def isSingleFile(torrentTitle):
+	for extension in validFileExtensions:
+		if(extension in torrentTitle):
+			return True
+	return False
+
 def readJson():
 	json_data=open("vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
@@ -132,7 +139,7 @@ def sync(syncingUser, serialToSync, match):
 			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
 			process = subprocess.check_call(command, shell=True)
 			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFileName() + "'\""
-			process = subprocess.check_call(command, shell=True)			
+			process = subprocess.check_call(command, shell=True)
 		os.chdir(settings['System Settings']['script_location'])
 		command = "python3.5 Tools/DiscordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
 		process = subprocess.call(command, shell=True)
@@ -145,6 +152,7 @@ def hashtoFile(theHash):
 	completed.write('\n')
 	completed.close()
 
+#TODO sys.argv[1] is the same as setFilePath(...) deal with it
 if __name__=='__main__':
 	try:
 		settings = readJson()
@@ -155,22 +163,26 @@ if __name__=='__main__':
 		serialToSync.setSeriesTitle(sys.argv[3])
 		serialToSync.setFilePath(settings['System Settings']['host_download_dir'] + sys.argv[3])
 
-		#for automation tools because PATH is hard
-		os.chdir(settings['System Settings']['script_location'])
+		isSingleFile = isSingleFile(sys.argv[3])
+		print (isSingleFile)
 
-		if "downloads/Anime" not in sys.argv[1]:
-			sys.exit(1)
-
-		jobs = []
-		for user in settings['Users']:
-			pullMALUserData(settings['Users'].keys())
-			syncingUser = User(user, settings['Users'][user])
-			getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
-			match = getMatch(syncingUser.getMalShows(), serialToSync)
-			if(match is not None):
-				p = multiprocessing.Process(target=sync, args=(syncingUser, serialToSync, match))
-				jobs.append(p)
-				p.start()
+		# #for automation tools because PATH is hard
+		# os.chdir(settings['System Settings']['script_location'])
+		#
+		# #TODO change to check if part of host host_download_dir is in sys.argv[1]
+		# if "downloads/Anime" not in sys.argv[1]:
+		# 	sys.exit(1)
+		#
+		# jobs = []
+		# for user in settings['Users']:
+		# 	pullMALUserData(settings['Users'].keys())
+		# 	syncingUser = User(user, settings['Users'][user])
+		# 	getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
+		# 	match = getMatch(syncingUser.getMalShows(), serialToSync)
+		# 	if(match is not None):
+		# 		p = multiprocessing.Process(target=sync, args=(syncingUser, serialToSync, match))
+		# 		jobs.append(p)
+		# 		p.start()
 
 	except Exception as e:
 		print (e)
