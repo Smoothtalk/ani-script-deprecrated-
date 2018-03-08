@@ -129,9 +129,9 @@ def sync(syncingUser, serialToSync, match):
 	print ("Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName())
 	if (int(serialToSync.getSeriesEpisode()) > int(match['episodesWatched'])):
 		if(settings['System Settings']['individual folders'] == "True"):
-			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " mkdir -p " + syncingUser.getRemote_Download_Dir() + '/' +  serialToSync.getSeriesName()
+			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mkdir -p " + syncingUser.getRemote_Download_Dir() + '/' +  serialToSync.getSeriesName().replace(" ", "\ ") + '"'
 			process = subprocess.check_call(command, shell=True)
-			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + "\""
+			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName().replace(" ", "\ ") + "\""
 			process = subprocess.check_call(command, shell=True)
 			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + '/' + sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + '/' + serialToSync.getFileName() + "'\""
 			process = subprocess.check_call(command, shell=True)
@@ -164,25 +164,25 @@ if __name__=='__main__':
 		serialToSync.setFilePath(settings['System Settings']['host_download_dir'] + sys.argv[3])
 
 		isSingleFile = isSingleFile(sys.argv[3])
-		print (isSingleFile)
+		#print (isSingleFile)
 
-		# #for automation tools because PATH is hard
-		# os.chdir(settings['System Settings']['script_location'])
-		#
-		# #TODO change to check if part of host host_download_dir is in sys.argv[1]
-		# if "downloads/Anime" not in sys.argv[1]:
-		# 	sys.exit(1)
-		#
-		# jobs = []
-		# for user in settings['Users']:
-		# 	pullMALUserData(settings['Users'].keys())
-		# 	syncingUser = User(user, settings['Users'][user])
-		# 	getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
-		# 	match = getMatch(syncingUser.getMalShows(), serialToSync)
-		# 	if(match is not None):
-		# 		p = multiprocessing.Process(target=sync, args=(syncingUser, serialToSync, match))
-		# 		jobs.append(p)
-		# 		p.start()
+		#for automation tools because PATH is hard
+		os.chdir(settings['System Settings']['script_location'])
+
+		#TODO change to check if part of host host_download_dir is in sys.argv[1]
+		if "downloads/Anime" not in sys.argv[1]:
+			sys.exit(1)
+
+		jobs = []
+		for user in settings['Users']:
+			pullMALUserData(settings['Users'].keys())
+			syncingUser = User(user, settings['Users'][user])
+			getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
+			match = getMatch(syncingUser.getMalShows(), serialToSync)
+			if(match is not None):
+				p = multiprocessing.Process(target=sync, args=(syncingUser, serialToSync, match))
+				jobs.append(p)
+				p.start()
 
 	except Exception as e:
 		print (e)
