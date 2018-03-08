@@ -4,6 +4,7 @@ import sys
 import os
 import json
 import subprocess
+import glob
 import xml.etree.ElementTree as ET
 import multiprocessing
 from fuzzywuzzy import fuzz
@@ -11,18 +12,23 @@ from multiprocessing import Process
 from collections import OrderedDict
 
 FUZZ_RATIO = 70
-validFileExtensions = ['.mkv', '.avi', '.mp4']
+validFileExtensions = ['.avi', '.mkv', '.mp4']
 
 class Series:
 	seriesName = ""
-	episode = None
+	episode = -1
 	fileName = ""
 	filePath = ""
+	finalFileName = ""
 
 	def getSeriesName(self):
 		return self.seriesName
 	def getSeriesEpisode(self):
-		return self.episode
+		return int(self.episode)
+	def setSeriesEpisode(self, episodeNumber):
+		self.episode = int(episodeNumber)
+	def getSeriesFileName(self):
+		return self.fileName
 	def setSeriesTitle(self, fileName):
 		tempName = fileName.replace("_", " ")
 		firstHyphen = tempName.rfind(' - ')
@@ -34,14 +40,15 @@ class Series:
 
 		seriesName = seriesName.strip()
 
+		self.fileName = fileName
 		self.seriesName = seriesName
 		self.episode = episode
-		self.fileName = filename
-	def getFileName(self):
-		return self.fileName
+		self.finalFileName = filename
+	def getFinalName(self):
+		return self.finalFileName
 	def setFilePath(self, filePath):
 		self.filePath = filePath
-	def getFilePath(self):
+	def getFullFilePath(self):
 		return self.filePath
 
 class User:
@@ -68,14 +75,15 @@ class User:
 	def getCustom_Titles(self):
 		return self.custom_titles
 	def addMalShow(self, malShow, episodesWatched):
-		newShow = {malShow: {'episodesWatched': episodesWatched}}
+		newShow = {malShow: {'episodesWatched': int(episodesWatched)}}
 		self.MalShows.update(newShow)
 	def getMalShows(self):
 		return self.MalShows
 	def getMalDatabaseFileName(self):
 		return self.malDatabaseFileName
 
-def isSingleFile(torrentTitle):
+def singleFile(torrentTitle):
+	#TODO Fix check for file extensions in torrent title
 	for extension in validFileExtensions:
 		if(extension in torrentTitle):
 			return True
@@ -117,33 +125,66 @@ def getMALShows(malUserFile, user):
 		for show in user.getCustom_Titles():
 				user.addMalShow(show, 0)
 
-def getMatch(malShows, serialToSync):
-	match = {'Title': "", 'episodesWatched': -1}
-	for show in malShows.keys():
-		if (fuzz.ratio(show, serialToSync.getSeriesName()) > FUZZ_RATIO):
-			match['Title'] = show
-			match['episodesWatched'] = malShows[show]['episodesWatched']
-	return match
+def getMatches(malShows, listOfValidFiles):
+	matches = []
 
-def sync(syncingUser, serialToSync, match):
-	print ("Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName())
-	if (int(serialToSync.getSeriesEpisode()) > int(match['episodesWatched'])):
-		if(settings['System Settings']['individual folders'] == "True"):
-			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mkdir -p " + syncingUser.getRemote_Download_Dir() + '/' +  serialToSync.getSeriesName().replace(" ", "\ ") + '"'
-			process = subprocess.check_call(command, shell=True)
-			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName().replace(" ", "\ ") + "\""
-			process = subprocess.check_call(command, shell=True)
-			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + '/' + sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + '/' + serialToSync.getFileName() + "'\""
-			process = subprocess.check_call(command, shell=True)
-		elif(settings['System Settings']['individual folders'] == "False"):
-			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
-			process = subprocess.check_call(command, shell=True)
-			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + sys.argv[3] + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFileName() + "'\""
-			process = subprocess.check_call(command, shell=True)
+	for validFile in listOfValidFiles:
+		for show in malShows.keys():
+			if (fuzz.ratio(show, validFile.getSeriesName()) > FUZZ_RATIO):
+				if validFile.getSeriesEpisode() > malShows[show]['episodesWatched']:
+					matches.append(validFile)
+	return matches
+
+def userLoop(settings, isSingleFile, user):
+	pullMALUserData(settings['Users'].keys())
+	syncingUser = User(user, settings['Users'][user])
+	getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
+
+	# return either list of one match, or multiple
+	listOfValidFiles = []
+
+	if(isSingleFile == True):
+		serialToSync = Series()
+		serialToSync.setSeriesTitle(sys.argv[3])
+		serialToSync.setFilePath(settings['System Settings']['host_download_dir'] + sys.argv[3])
+		listOfValidFiles.append(serialToSync)
+	else:
+		#glob the files here as a list of files
+		print ('Globbing')
+		os.chdir(settings['System Settings']['host_download_dir'] + sys.argv[3])#TODO try settings['System Settings']['host_download_dir'] + sys.argv[3] later
+		for fileExtension in validFileExtensions:
+			fileExtension = "*" + fileExtension #regexify it
+			for fileTitle in sorted(glob.glob(fileExtension)):
+				serialToSync = Series()
+				serialToSync.setSeriesTitle(fileTitle)
+				serialToSync.setFilePath(settings['System Settings']['host_download_dir'] + sys.argv[3] + '/' + fileTitle)
+				listOfValidFiles.append(serialToSync)
+
 		os.chdir(settings['System Settings']['script_location'])
-		command = "python3.5 Tools/DiscordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
-		process = subprocess.call(command, shell=True)
-		hashtoFile(sys.argv[2])
+
+	matches = getMatches(syncingUser.getMalShows(), listOfValidFiles)
+	if(matches is not None):
+		for match in matches:
+			sync(syncingUser, match)
+
+def sync(syncingUser, serialToSync):
+	print ("Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName())
+	if(settings['System Settings']['individual folders'] == "True"):
+		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mkdir -p " + syncingUser.getRemote_Download_Dir() + '/' +  serialToSync.getSeriesName().replace(" ", "\ ") + '"'
+		process = subprocess.check_call(command, shell=True)
+		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFullFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName().replace(" ", "\ ") + "\""
+		process = subprocess.check_call(command, shell=True)
+		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + serialToSync.getSeriesName() + '/' + serialToSync.getSeriesFileName() + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + '/' + serialToSync.getFinalName() + "'\""
+		process = subprocess.check_call(command, shell=True)
+	elif(settings['System Settings']['individual folders'] == "False"):
+		command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFullFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
+		process = subprocess.check_call(command, shell=True)
+		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesFileName() + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFinalName() + "'\""
+		process = subprocess.check_call(command, shell=True)
+	# os.chdir(settings['System Settings']['script_location'])
+	# command = "python3.5 Tools/DiscordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
+	# process = subprocess.call(command, shell=True)
+	# hashtoFile(sys.argv[2])
 
 def hashtoFile(theHash):
 	os.chdir(settings['System Settings']['script_location'])
@@ -152,20 +193,11 @@ def hashtoFile(theHash):
 	completed.write('\n')
 	completed.close()
 
-#TODO sys.argv[1] is the same as setFilePath(...) deal with it
+#TODO sys.argv[1] is the same as setFilePath(...) deal with it or refactor it out
 if __name__=='__main__':
 	try:
 		settings = readJson()
-
-		#substring the torrent name. If the script throws an exception here later
-		#on, switch index to find
-		serialToSync = Series()
-		serialToSync.setSeriesTitle(sys.argv[3])
-		serialToSync.setFilePath(settings['System Settings']['host_download_dir'] + sys.argv[3])
-
-		isSingleFile = isSingleFile(sys.argv[3])
-		#print (isSingleFile)
-
+		isSingleFile = singleFile(sys.argv[3])
 		#for automation tools because PATH is hard
 		os.chdir(settings['System Settings']['script_location'])
 
@@ -174,15 +206,11 @@ if __name__=='__main__':
 			sys.exit(1)
 
 		jobs = []
+
 		for user in settings['Users']:
-			pullMALUserData(settings['Users'].keys())
-			syncingUser = User(user, settings['Users'][user])
-			getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
-			match = getMatch(syncingUser.getMalShows(), serialToSync)
-			if(match is not None):
-				p = multiprocessing.Process(target=sync, args=(syncingUser, serialToSync, match))
-				jobs.append(p)
-				p.start()
+			p = multiprocessing.Process(target=userLoop, args=(settings, isSingleFile, user))
+			jobs.append(p)
+			p.start()
 
 	except Exception as e:
 		print (e)
