@@ -116,7 +116,7 @@ def getAllUniqueMALShows(users):
 	nextWeek = currDate + datetime.timedelta(days=7)
 
 	for user in users:
-		with open(user.getDataBaseFileName(), 'rt') as f:
+		with open(user.getDataBaseFileName(), 'rt', encoding='utf-8') as f:
 			tree = ET.parse(f)
 
 		for node in tree.findall('.//anime'):
