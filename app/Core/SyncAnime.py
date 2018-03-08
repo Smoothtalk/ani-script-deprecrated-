@@ -181,10 +181,10 @@ def sync(syncingUser, serialToSync):
 		process = subprocess.check_call(command, shell=True)
 		command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesFileName() + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFinalName() + "'\""
 		process = subprocess.check_call(command, shell=True)
-	# os.chdir(settings['System Settings']['script_location'])
-	# command = "python3.5 Tools/DiscordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
-	# process = subprocess.call(command, shell=True)
-	# hashtoFile(sys.argv[2])
+	os.chdir(settings['System Settings']['script_location'])
+	command = "python3.5 Tools/DiscordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
+	process = subprocess.call(command, shell=True)
+	hashtoFile(sys.argv[2])
 
 def hashtoFile(theHash):
 	os.chdir(settings['System Settings']['script_location'])
