@@ -49,3 +49,4 @@ tidfile
 torrentFlags
 fuzzytest.py
 tests/
+setup.py
