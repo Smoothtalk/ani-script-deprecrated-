@@ -83,11 +83,10 @@ class User:
 		return self.malDatabaseFileName
 
 def singleFile(torrentTitle):
-	#TODO Fix check for file extensions in torrent title
-	for extension in validFileExtensions:
-		if(extension in torrentTitle):
-			return True
-	return False
+	if(os.path.isdir(torrentTitle)):
+		return True
+	else:
+		return False
 
 def readJson():
 	json_data=open("vars.json").read()
@@ -151,7 +150,7 @@ def userLoop(settings, isSingleFile, user):
 	else:
 		#glob the files here as a list of files
 		print ('Globbing')
-		os.chdir(settings['System Settings']['host_download_dir'] + sys.argv[3])#TODO try settings['System Settings']['host_download_dir'] + sys.argv[3] later
+		os.chdir(settings['System Settings']['host_download_dir'] + sys.argv[3])
 		for fileExtension in validFileExtensions:
 			fileExtension = "*" + fileExtension #regexify it
 			for fileTitle in sorted(glob.glob(fileExtension)):
@@ -197,7 +196,7 @@ def hashtoFile(theHash):
 if __name__=='__main__':
 	try:
 		settings = readJson()
-		isSingleFile = singleFile(sys.argv[3])
+		isSingleFile = singleFile(sys.argv[1])
 		#for automation tools because PATH is hard
 		os.chdir(settings['System Settings']['script_location'])
 
