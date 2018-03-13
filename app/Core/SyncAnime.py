@@ -84,9 +84,9 @@ class User:
 
 def singleFile(torrentTitle):
 	if(os.path.isdir(torrentTitle)):
-		return True
-	else:
 		return False
+	else:
+		return True
 
 def readJson():
 	json_data=open("vars.json").read()
@@ -197,19 +197,20 @@ if __name__=='__main__':
 	try:
 		settings = readJson()
 		isSingleFile = singleFile(sys.argv[1])
+		print (isSingleFile)
 		#for automation tools because PATH is hard
 		os.chdir(settings['System Settings']['script_location'])
 
-		#TODO change to check if part of host host_download_dir is in sys.argv[1]
-		if "downloads/Anime" not in sys.argv[1]:
-			sys.exit(1)
-
-		jobs = []
-
-		for user in settings['Users']:
-			p = multiprocessing.Process(target=userLoop, args=(settings, isSingleFile, user))
-			jobs.append(p)
-			p.start()
+		# #TODO change to check if part of host host_download_dir is in sys.argv[1]
+		# if "downloads/Anime" not in sys.argv[1]:
+		# 	sys.exit(1)
+		#
+		# jobs = []
+		#
+		# for user in settings['Users']:
+		# 	p = multiprocessing.Process(target=userLoop, args=(settings, isSingleFile, user))
+		# 	jobs.append(p)
+		# 	p.start()
 
 	except Exception as e:
 		print (e)
