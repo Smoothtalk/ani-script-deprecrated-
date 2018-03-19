@@ -129,7 +129,7 @@ def getMatches(malShows, listOfValidFiles):
 
 	for validFile in listOfValidFiles:
 		for show in malShows.keys():
-			if (fuzz.ratio(show, validFile.getSeriesName()) > FUZZ_RATIO):
+			if (fuzz.ratio(show, validFile.getSeriesName()) > FUZZ_RATIO) and validFile not in matches:
 				if validFile.getSeriesEpisode() > malShows[show]['episodesWatched']:
 					matches.append(validFile)
 	return matches
@@ -164,7 +164,9 @@ def userLoop(settings, isSingleFile, user):
 	matches = getMatches(syncingUser.getMalShows(), listOfValidFiles)
 	if(matches is not None):
 		for match in matches:
-			sync(syncingUser, match)
+			#TODO fix multiple matches
+			print (match.getSeriesName())
+			# sync(syncingUser, match)
 
 def sync(syncingUser, serialToSync):
 	print ("Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName())
