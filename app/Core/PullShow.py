@@ -38,7 +38,7 @@ def readJson():
 	return data #an OrderedDict
 
 def getToken():
-	getTokenURL = "https://torrentapi.org/pubapi_v2.php?get_token=get_token"
+	getTokenURL = "https://torrentapi.org/pubapi_v2.php?app_id=ShowSync&get_token=get_token"
 
 	try:
 		hdr = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36'}
@@ -56,7 +56,7 @@ def getToken():
 
 def searchTVTorrents(token, database):
 	#category 41 is hdtv episodes
-	listTorrentsURL = "https://torrentapi.org/pubapi_v2.php?mode=list&category=41&format=json&token="
+	listTorrentsURL = "https://torrentapi.org/pubapi_v2.php?app_id=ShowSync&mode=list&category=41&format=json&token="
 	requestURL = listTorrentsURL + token
 
 	try:
@@ -114,30 +114,29 @@ def getShowDict(torrent_title):
 def getTraktShows(settings):
 	allShows = []
 	for user in settings['Users']:
-		user = "Smoothtalk"
-		my = User(settings['Users'][user]['traktUserName'])
+		if(settings['Users'][user]['traktUserName'] != ''):
+			my = User(settings['Users'][user]['traktUserName'])
 
-		for y in range(len(my.watched_shows)):
-			theDict = my.watched_shows[y].seasons[-1]
+			for y in range(len(my.watched_shows)):
+				theDict = my.watched_shows[y].seasons[-1]
 
-			# gets the episodes (change to -1 to get current season value
-			# -2 gets all teh episodes you've watched
-			#MIGHT NOT WORK
-			values = theDict['episodes']
-			last_episode_watched = values[-1]
+				# gets the episodes (change to -1 to get current season value)
+				# -2 gets all the episodes you've watched
+				#MIGHT NOT WORK
+				values = theDict['episodes']
+				last_episode_watched = values[-1]
 
-			episode_Number =  last_episode_watched['number']
-			date_Watched_At = last_episode_watched['last_watched_at']
+				episode_Number =  last_episode_watched['number']
+				date_Watched_At = last_episode_watched['last_watched_at']
 
-			traktShow = TvShow();
-			traktShow.setTitle(my.watched_shows[y])
-			traktShow.setLast_watched_date(date_Watched_At)
-			traktShow.setlast_watched_episode(episode_Number)
-			allShows.append(traktShow)
-
+				traktShow = TvShow();
+				traktShow.setTitle(my.watched_shows[y])
+				traktShow.setLast_watched_date(date_Watched_At)
+				traktShow.setlast_watched_episode(episode_Number)
+				allShows.append(traktShow)
 	return allShows
 
-def compare(allShows, settings, matches):
+def compare(allShows, settings, matches, database):
 	fileNameKey = "filename"
 	magnetKey = "download"
 
@@ -199,5 +198,5 @@ matches = []
 token = getToken()
 searchTVTorrents(token, database)
 allShows = getTraktShows(settings)
-compare(allShows, settings, matches)
-generateMagnets(matches)
+compare(allShows, settings, matches, database)
+# generateMagnets(matches)
