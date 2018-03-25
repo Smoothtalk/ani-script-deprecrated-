@@ -32,6 +32,7 @@ class SyncUser:
 		self.remote_port = userSettings['remote_port']
 		self.remote_host = userSettings['remote_host']
 		self.remote_download_dir = userSettings['remote_download_dir']
+		self.local_download_dir = userSettings['local_download_dir']
 		self.discord_ID = userSettings['discord_ID']
 		self.traktUserName = userSettings['traktUserName']
 		self.custom_titles = userSettings['custom_titles']
@@ -45,6 +46,8 @@ class SyncUser:
 		return self.remote_host
 	def getRemote_Download_Dir(self):
 		return self.remote_download_dir
+	def getLocal_Download_Dir(self):
+		return self.local_download_dir
 	def getDiscord_ID(self):
 		return self.discord_ID
 	def getTraktUserName(self):
@@ -123,26 +126,27 @@ def sync(settings, syncingUser, match, glob, filePath):
 		os.chdir(filePath)
 		for file in glob.glob("*.mkv"):
 			innerFileName = file
-
-		if(syncingUser.getRemote_Host() != ''):
 			filename = match.getTitle() + " - " + 'S' + match.getSeason() + 'E' + match.getEpisode() + ".mkv"
-			if(settings['System Settings']['individual folders'] == "True"):
-				seriesFolder = (match.getTitle() + '/' + "Season " + match.getSeason())
-				command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mkdir -p " + syncingUser.getRemote_Download_Dir() + seriesFolder.replace(" ", "\ ") + '"'
-				os.system(command)
-				command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + seriesFolder.replace(" ", "\ ") + "\""
-				os.system(command)
-				command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mv '" + syncingUser.getRemote_Download_Dir() + seriesFolder + '/' + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + seriesFolder + '/' + filename + "'\""
-				os.system(command)
-			elif(settings['System Settings']['individual folders'] == "False"):
-				command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
-				os.system(command)
-				command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + '/' + filename + "'\""
-				os.system(command)
 
-			os.chdir(settings['System Settings']['script_location'])
-			command = "python3.5 Tools/DiscordAnnounce.py \'" + filename + '\' ' + syncingUser.getUserName()
-			process = subprocess.call(command, shell=True)
+			if(syncingUser.getRemote_Host() != ''):
+				if(settings['System Settings']['individual folders'] == "True"):
+					seriesFolder = (match.getTitle() + '/' + "Season " + match.getSeason())
+					command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mkdir -p " + syncingUser.getRemote_Download_Dir() + seriesFolder.replace(" ", "\ ") + '"'
+					os.system(command)
+					command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + seriesFolder.replace(" ", "\ ") + "\""
+					os.system(command)
+					command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mv '" + syncingUser.getRemote_Download_Dir() + seriesFolder + '/' + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + seriesFolder + '/' + filename + "'\""
+					os.system(command)
+				elif(settings['System Settings']['individual folders'] == "False"):
+					command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
+					os.system(command)
+					command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + innerFileName + "' '" + syncingUser.getRemote_Download_Dir() + '/' + filename + "'\""
+					os.system(command)
+			else: #want to keep it on server
+				if(syncingUser.getLocal_Download_Dir() != ''):
+					command = "cp \'" + filePath + "/" + innerFileName + "\' \'" + syncingUser.getLocal_Download_Dir() + '/' + filename "\'"
+					os.system(command)
+					#copy file to download dir
 
 		os.chdir(settings['System Settings']['script_location'])
 		command = "python3.5 Tools/DiscordAnnounce.py \'" + filename + '\' ' + syncingUser.getUserName()
@@ -150,8 +154,8 @@ def sync(settings, syncingUser, match, glob, filePath):
 
 	except Exception as e:
 			print (e)
-			sys.exit(1)
 			traceback.print_stack()
+
 
 settings = readJson()
 filePath = sys.argv[1]
