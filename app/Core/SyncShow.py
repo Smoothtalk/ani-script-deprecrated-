@@ -144,8 +144,9 @@ def sync(settings, syncingUser, match, glob, filePath):
 					os.system(command)
 			else: #want to keep it on server
 				if(syncingUser.getLocal_Download_Dir() != ''):
-					command = "cp \'" + filePath + "/" + innerFileName + "\' \'" + syncingUser.getLocal_Download_Dir() + '/' + filename "\'"
-					os.system(command)
+					command = "cp \'" + filePath + "/" + innerFileName + "\' \'" + syncingUser.getLocal_Download_Dir() + filename + "\'"
+					print (command)
+					#os.system(command)
 					#copy file to download dir
 
 		os.chdir(settings['System Settings']['script_location'])
