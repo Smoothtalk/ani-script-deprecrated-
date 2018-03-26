@@ -111,10 +111,10 @@ def getTraktShows(syncUser):
 
 		syncUser.addShow(traktShow)
 
-def match(release, traktShows):
+def matchShow(release, traktShows):
 	match = None
 	for show in traktShows:
-		# print release.getTitle()
+		#print (show.getTitle())
 		if (fuzz.ratio(show.getTitle(), release.getTitle()) > FUZZ_RATIO):
 			match = show
 	return match
@@ -127,10 +127,10 @@ def sync(settings, syncingUser, match, glob, filePath):
 		for file in glob.glob("*.mkv"):
 			innerFileName = file
 			filename = match.getTitle() + " - " + 'S' + match.getSeason() + 'E' + match.getEpisode() + ".mkv"
-
+			seriesFolder = (match.getTitle() + '/' + "Season " + match.getSeason())
+			
 			if(syncingUser.getRemote_Host() != ''):
 				if(settings['System Settings']['individual folders'] == "True"):
-					seriesFolder = (match.getTitle() + '/' + "Season " + match.getSeason())
 					command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mkdir -p " + syncingUser.getRemote_Download_Dir() + seriesFolder.replace(" ", "\ ") + '"'
 					os.system(command)
 					command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + filePath + "/" + innerFileName + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + seriesFolder.replace(" ", "\ ") + "\""
@@ -144,10 +144,16 @@ def sync(settings, syncingUser, match, glob, filePath):
 					os.system(command)
 			else: #want to keep it on server
 				if(syncingUser.getLocal_Download_Dir() != ''):
-					command = "cp \'" + filePath + "/" + innerFileName + "\' \'" + syncingUser.getLocal_Download_Dir() + filename + "\'"
-					print (command)
-					#os.system(command)
-					#copy file to download dir
+					if(settings['System Settings']['individual folders'] == "True"):
+						command = "mkdir -p \'" + syncingUser.getLocal_Download_Dir() + seriesFolder + '\''
+						os.system(command)
+						command = "cp -r \'" + filePath + "/" + innerFileName + "\' \'" + syncingUser.getLocal_Download_Dir() + seriesFolder + '/' + filename + "\'"
+						os.system(command)
+					elif(settings['System Settings']['individual folders'] == "False"):
+						command = "cp \'" + filePath + "/" + innerFileName + "\' \'" + syncingUser.getLocal_Download_Dir() + filename + "\'"
+						os.system(command)
+						#copy file to download dir
+
 
 		os.chdir(settings['System Settings']['script_location'])
 		command = "python3.5 Tools/DiscordAnnounce.py \'" + filename + '\' ' + syncingUser.getUserName()
@@ -167,7 +173,7 @@ for user in settings['Users']:
 	if (settings['Users'][user]['traktUserName'] != ""):
 		syncingUser = SyncUser(user, settings['Users'][user])
 		getTraktShows(syncingUser)
-		match = match(syncRelease, syncingUser.getShows())
+		match = matchShow(syncRelease, syncingUser.getShows())
 		if (match is not None):
 			print ("Syncing: " + str(match.getTitle()))
 			sync(settings, syncingUser, syncRelease, glob, filePath)
