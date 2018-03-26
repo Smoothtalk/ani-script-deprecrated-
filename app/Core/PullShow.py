@@ -161,6 +161,7 @@ def compare(allShows, settings, matches, database):
 					if (fuzz.ratio(str(i.getTitle())[9:].lower(), showDict['Title'].lower()) > 70 and int(showDict['Episode']) > i.getlast_watched_episode()):
 						regex = r"id=.*.="
 
+						os.chdir(settings['System Settings']['script_location'] + "/Data")
 						dledShowsFile = open('dledshows', 'a+')
 						alreadyDLShows = dledShowsFile.read().split("\n")
 
@@ -182,10 +183,12 @@ def compare(allShows, settings, matches, database):
 
 def generateMagnets(matches):
 	for show in matches:
-		# command = "python Magnet_To_Torrent2.py -m " + '"' + show['Magnet'] + '"' + " -o " + show['File']
+		# os.chdir(settings['System Settings']['script_location'] + "/Core")
+		# command = "python ../Tools/Magnet2Torrent.py -m " + '"' + show['Magnet'] + '"' + " -o " + show['File']
 		# os.system(command)
 		#
 		# command = "mv " + show['File'] + ' ' + settings['System Settings']['watch_dir']
+		# os.system(command)
 		command = "echo \"it worked\""
 		os.system(command)
 
