@@ -157,7 +157,6 @@ def sync(settings, syncingUser, match, glob, filePath):
 			print (e)
 			traceback.print_stack()
 
-
 settings = readJson()
 filePath = sys.argv[1]
 syncRelease = Release(sys.argv[2])
