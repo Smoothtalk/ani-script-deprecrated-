@@ -162,7 +162,7 @@ def compare(allShows, settings, matches, database):
 						regex = r"id=.*.="
 
 						os.chdir(settings['System Settings']['script_location'] + "/Data")
-						dledShowsFile = open('dledshows', 'a+')
+						dledShowsFile = open('dledshows', 'r+')
 						alreadyDLShows = dledShowsFile.read().split("\n")
 
 						epititle = showDict['Title'] + '-S' + showDict['Season'] + 'E' + showDict['Episode']
@@ -176,7 +176,7 @@ def compare(allShows, settings, matches, database):
 							matchDict.update(magnetDict)
 
 							matches.append(matchDict)
-
+							dledShowsFile = open('dledshows', 'a+')
 							dledShowsFile.write(epititle+'\n')
 
 						dledShowsFile.close()
