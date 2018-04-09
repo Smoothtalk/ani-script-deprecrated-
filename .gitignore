@@ -50,3 +50,4 @@ torrentFlags
 fuzzytest.py
 tests/
 setup.py
+*.pyc
