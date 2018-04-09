@@ -51,3 +51,4 @@ fuzzytest.py
 tests/
 setup.py
 *.pyc
+.idea/
