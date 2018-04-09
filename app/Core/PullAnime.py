@@ -114,9 +114,9 @@ def getAllUniqueMALShows(users):
 	currDate = datetime.datetime.today()
 	lastWeek = currDate - datetime.timedelta(days=7)
 	nextWeek = currDate + datetime.timedelta(days=7)
+	tempShowId = 0
 
 	for user in users:
-		tempShowId = 0
 		with open(user.getDataBaseFileName(), 'rt', encoding='utf-8') as f:
 			tree = ET.parse(f)
 
