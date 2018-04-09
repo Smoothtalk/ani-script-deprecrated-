@@ -116,6 +116,7 @@ def getAllUniqueMALShows(users):
 	nextWeek = currDate + datetime.timedelta(days=7)
 
 	for user in users:
+		tempShowId = 0
 		with open(user.getDataBaseFileName(), 'rt', encoding='utf-8') as f:
 			tree = ET.parse(f)
 
@@ -153,16 +154,24 @@ def getAllUniqueMALShows(users):
 					if (lastWeek <= seriesEnd <= nextWeek):
 						allShows.append(tempAnime)
 
+		#Changed to add the custom titles after pruning all dupes
 		#add custom titles here
+		# set was working with ids
 		for altTitle in user.getCustom_Titles():
 			tempAnime = anime()
 			tempAnime.setTitle(altTitle.strip())
+			tempAnime.setShow_id(tempShowId)
+			tempShowId += 1
 			if(checkDupes(tempAnime.getTitle(), allShows)):
 				allShows.append(tempAnime)
+
+	# for animeShow in allShows:
+	# 	print (animeShow.getShow_id())
 
 	print ("Length of all shows(dupes included): " + str(len(allShows)))
 	allShows = list(set(allShows)) #Removes dupes from list
 	print ("Length of all shows(incl custom title, no dupes): " + str(len(allShows)))
+
 	return allShows
 
 def getMatches(releases, allShows, matches):
@@ -190,7 +199,7 @@ def makeMagnets(matches):
 	nextWeek = currDate + datetime.timedelta(days=7)
 
 	for matchedShow in matches:
-		print (matchedShow.title)
+		#print (matchedShow.title)
 		title = matchedShow.title
 		url = matchedShow.link
 
@@ -238,6 +247,6 @@ for url in feedUrls:
 		feed = feedparser.parse(url)
 		releases = feed.get('entries')
 		matches = getMatches(releases, allShows, matches)
-		makeMagnets(matches)
+		#makeMagnets(matches)
 
 print ("Length of matches: " + str(len(matches)))
