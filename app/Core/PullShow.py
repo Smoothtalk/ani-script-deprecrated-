@@ -12,6 +12,7 @@ from fuzzywuzzy import fuzz
 from bs4 import BeautifulSoup
 from trakt.users import User
 from collections import OrderedDict
+import time
 
 class TvShow():
 	def __init__(self):
@@ -199,6 +200,7 @@ database = "Data/RarBG" + ".json"
 matches = []
 
 token = getToken()
+time.sleep(2) #two second delay to avoid the 429 rate limiting since the api is limited to 1req/2s
 searchTVTorrents(token, database)
 allShows = getTraktShows(settings)
 compare(allShows, settings, matches, database)
