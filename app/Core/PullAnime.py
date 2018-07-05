@@ -77,7 +77,7 @@ def getSeriesTitle(fileName):
 	seriesName = tempName[firstCBrac+2:firstHyphen]
 	return seriesName
 
-def pullMALUserData(userList):
+def pullAniListUserData(userList):
 	for user in userList:
 		os.chdir('../')
 		command = "python3.5 Tools/retAniList.py " + '\"' + user + '\"'
@@ -109,7 +109,7 @@ def generateUserObjects(users):
 
 	return userList
 
-def getAllUniqueMALShows(users):
+def getAllUniqueAniListShows(users):
 	allShows = [] #holds all watching and plan to watch shows
 	currDate = datetime.datetime.today()
 	lastWeek = currDate - datetime.timedelta(days=7)
@@ -227,9 +227,9 @@ def getFeeds(Rss_Feeds):
 settings = readJson()
 
 #pull updated user list from Mal. not /really/ required, but w/e
-pullMALUserData(settings['Users'].keys())
+pullAniListUserData(settings['Users'].keys())
 userObjects = generateUserObjects(settings['Users'])
-allShows = getAllUniqueMALShows(userObjects)
+allShows = getAllUniqueAniListShows(userObjects)
 # feedUrls = getFeeds(settings['Rss Feeds'])
 #
 # matches = []
