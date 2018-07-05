@@ -80,7 +80,7 @@ def getSeriesTitle(fileName):
 def pullMALUserData(userList):
 	for user in userList:
 		os.chdir('../')
-		command = "python3.5 Tools/retMal.py " + '\"' + user + '\"'
+		command = "python3.5 Tools/retAniList.py " + '\"' + user + '\"'
 		os.system(command)
 		os.chdir('Core/')
 
@@ -100,7 +100,7 @@ def generateUserObjects(users):
 	userList = []
 
 	for user in users:
-		dataBaseFileName = "../Data/" + user + ".xml"
+		dataBaseFileName = "../Data/" + user + ".json"
 		newUser = userClass()
 		newUser.setUserName(user)
 		newUser.setCustom_Titles(users[user]['custom_titles'])
@@ -117,60 +117,74 @@ def getAllUniqueMALShows(users):
 	tempShowId = 0
 
 	for user in users:
-		with open(user.getDataBaseFileName(), 'rt', encoding='utf-8') as f:
-			tree = ET.parse(f)
+		json_data=open(user.getDataBaseFileName()).read()
+		data = json.loads(json_data)
 
-		for node in tree.findall('.//anime'):
-			raw_status = node.find('my_status').text
-			status = raw_status.strip()
-			#user's series status: 1 == watching, 2 == completed, 6 == plan to watch
-			if (status == '1' or status == '6'):
-				show_id = node.find('series_animedb_id').text.strip()
-				raw_title = node.find('series_title').text
-				raw_alt_title = node.find('series_synonyms').text #this is a list
-				series_status = node.find('series_status').text.strip()
-				series_end_date = node.find('series_end').text.strip()
-				raw_my_watched_episodes = node.find('my_watched_episodes').text
-				my_watched_episodes = raw_my_watched_episodes.strip()
+		# find all the user's PTW and Currently watching shows
+		# if show hits criteria
+		# make temp anime and add it to list
+		# TODO check if utf-8 titles work
 
-				title = raw_title.strip()
-				alt_title_unsplit = raw_alt_title.strip()
-				alt_title = alt_title_unsplit.split('; ')
-				if alt_title[0] == "" :#and len(alt_title) > 1:
-					alt_title.remove('')
-
-				if ('-00' not in series_end_date):
-					seriesEnd = datetime.datetime.strptime(series_end_date, '%Y-%m-%d') #conversion from string to datetime
-
-				tempAnime = anime()
-				tempAnime.setShow_id(show_id)
-				tempAnime.setTitle(title)
-				tempAnime.setAlt_titles(alt_title)
-				tempAnime.setLast_watched(my_watched_episodes)
-				tempAnime.setStatus(series_status)
-				if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
-					allShows.append(tempAnime)
-				elif series_status == "2":
-					if (lastWeek <= seriesEnd <= nextWeek):
+		for bigList in data:
+			if(bigList['status'] == "CURRENT" or bigList['status'] == "PLANNING"):
+				for entry in bigList['entries']:
+					tempAnime = anime()
+					tempAnime.setShow_id(entry['mediaId'])
+					tempAnime.setTitle(entry['media']['title']['romaji'])
+					tempAnime.setAlt_titles(entry['media']['synonyms'])
+					tempAnime.setLast_watched(entry['progress'])
+					tempAnime.setStatus(entry['media']['status'])
+					if(entry['media']['status'] == "RELEASING" or entry['media']['status'] == "NOT_YET_RELEASED"):
 						allShows.append(tempAnime)
 
-		#Changed to add the custom titles after pruning all dupes
-		#add custom titles here
-		# set was working with ids
-		for altTitle in user.getCustom_Titles():
-			tempAnime = anime()
-			tempAnime.setTitle(altTitle.strip())
-			tempAnime.setShow_id(tempShowId)
-			tempShowId += 1
-			if(checkDupes(tempAnime.getTitle(), allShows)):
-				allShows.append(tempAnime)
+		# for node in tree.findall('.//anime'):
+		# 	raw_status = node.find('my_status').text
+		# 	status = raw_status.strip()
+		# 	#user's series status: 1 == watching, 2 == completed, 6 == plan to watch
+		# 	if (status == '1' or status == '6'):
+		# 		show_id = node.find('series_animedb_id').text.strip()
+		# 		raw_title = node.find('series_title').text
+		# 		raw_alt_title = node.find('series_synonyms').text #this is a list
+		# 		series_status = node.find('series_status').text.strip()
+		# 		series_end_date = node.find('series_end').text.strip()
+		# 		raw_my_watched_episodes = node.find('my_watched_episodes').text
+		# 		my_watched_episodes = raw_my_watched_episodes.strip()
+		#
+		# 		title = raw_title.strip()
+		# 		alt_title_unsplit = raw_alt_title.strip()
+		# 		alt_title = alt_title_unsplit.split('; ')
+		# 		if alt_title[0] == "" :#and len(alt_title) > 1:
+		# 			alt_title.remove('')
+		#
+		# 		if ('-00' not in series_end_date):
+		# 			seriesEnd = datetime.datetime.strptime(series_end_date, '%Y-%m-%d') #conversion from string to datetime
+		#
+		# 		tempAnime = anime()
+		# 		tempAnime.setShow_id(show_id)
+		# 		tempAnime.setTitle(title)
+		# 		tempAnime.setAlt_titles(alt_title)
+		# 		tempAnime.setLast_watched(my_watched_episodes)
+		# 		tempAnime.setStatus(series_status)
+		# 		if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
+		# 			allShows.append(tempAnime)
+		# 		elif series_status == "2":
+		# 			if (lastWeek <= seriesEnd <= nextWeek):
+		# 				allShows.append(tempAnime)
+		#
+		# #Changed to add the custom titles after pruning all dupes
+		# #add custom titles here
+		# # set was working with ids
+		# for altTitle in user.getCustom_Titles():
+		# 	tempAnime = anime()
+		# 	tempAnime.setTitle(altTitle.strip())
+		# 	tempAnime.setShow_id(tempShowId)
+		# 	tempShowId += 1
+		# 	if(checkDupes(tempAnime.getTitle(), allShows)):
+		# 		allShows.append(tempAnime)
 
-	# for animeShow in allShows:
-	# 	print (animeShow.getShow_id())
-
-	print ("Length of all shows(dupes included): " + str(len(allShows)))
-	allShows = list(set(allShows)) #Removes dupes from list
-	print ("Length of all shows(incl custom title, no dupes): " + str(len(allShows)))
+	# print ("Length of all shows(dupes included): " + str(len(allShows)))
+	# allShows = list(set(allShows)) #Removes dupes from list
+	# print ("Length of all shows(incl custom title, no dupes): " + str(len(allShows)))
 
 	return allShows
 
@@ -239,14 +253,14 @@ settings = readJson()
 pullMALUserData(settings['Users'].keys())
 userObjects = generateUserObjects(settings['Users'])
 allShows = getAllUniqueMALShows(userObjects)
-feedUrls = getFeeds(settings['Rss Feeds'])
-
-matches = []
-for url in feedUrls:
-	if(url != ""):
-		feed = feedparser.parse(url)
-		releases = feed.get('entries')
-		matches = getMatches(releases, allShows, matches)
-		#makeMagnets(matches)
-
-print ("Length of matches: " + str(len(matches)))
+# feedUrls = getFeeds(settings['Rss Feeds'])
+#
+# matches = []
+# for url in feedUrls:
+# 	if(url != ""):
+# 		feed = feedparser.parse(url)
+# 		releases = feed.get('entries')
+# 		matches = getMatches(releases, allShows, matches)
+# 		#makeMagnets(matches)
+#
+# print ("Length of matches: " + str(len(matches)))
