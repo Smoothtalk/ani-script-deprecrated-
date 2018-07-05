@@ -123,7 +123,6 @@ def getAllUniqueMALShows(users):
 		# find all the user's PTW and Currently watching shows
 		# if show hits criteria
 		# make temp anime and add it to list
-		# TODO check if utf-8 titles work
 
 		for bigList in data:
 			if(bigList['status'] == "CURRENT" or bigList['status'] == "PLANNING"):
@@ -131,60 +130,38 @@ def getAllUniqueMALShows(users):
 					tempAnime = anime()
 					tempAnime.setShow_id(entry['mediaId'])
 					tempAnime.setTitle(entry['media']['title']['romaji'])
-					tempAnime.setAlt_titles(entry['media']['synonyms'])
 					tempAnime.setLast_watched(entry['progress'])
 					tempAnime.setStatus(entry['media']['status'])
+
+					if(entry['media']["endDate"]['day'] != None):
+						seriesEndStr = str(entry['media']["endDate"]['year']) + '-' + str(entry['media']["endDate"]['month']) + '-' + str(entry['media']["endDate"]['day'])
+						seriesEnd = datetime.datetime.strptime(seriesEndStr, '%Y-%m-%d') #conversion from string to datetime
+
+					tempAnime.setAlt_titles(entry['media']['synonyms'])
+
 					if(entry['media']['status'] == "RELEASING" or entry['media']['status'] == "NOT_YET_RELEASED"):
 						allShows.append(tempAnime)
+					elif(entry['media']['status'] == "FINISHED"):
+						if (lastWeek <= seriesEnd <= nextWeek):
+							allShows.append(tempAnime)
 
-		# for node in tree.findall('.//anime'):
-		# 	raw_status = node.find('my_status').text
-		# 	status = raw_status.strip()
-		# 	#user's series status: 1 == watching, 2 == completed, 6 == plan to watch
-		# 	if (status == '1' or status == '6'):
-		# 		show_id = node.find('series_animedb_id').text.strip()
-		# 		raw_title = node.find('series_title').text
-		# 		raw_alt_title = node.find('series_synonyms').text #this is a list
-		# 		series_status = node.find('series_status').text.strip()
-		# 		series_end_date = node.find('series_end').text.strip()
-		# 		raw_my_watched_episodes = node.find('my_watched_episodes').text
-		# 		my_watched_episodes = raw_my_watched_episodes.strip()
-		#
-		# 		title = raw_title.strip()
-		# 		alt_title_unsplit = raw_alt_title.strip()
-		# 		alt_title = alt_title_unsplit.split('; ')
-		# 		if alt_title[0] == "" :#and len(alt_title) > 1:
-		# 			alt_title.remove('')
-		#
-		# 		if ('-00' not in series_end_date):
-		# 			seriesEnd = datetime.datetime.strptime(series_end_date, '%Y-%m-%d') #conversion from string to datetime
-		#
-		# 		tempAnime = anime()
-		# 		tempAnime.setShow_id(show_id)
-		# 		tempAnime.setTitle(title)
-		# 		tempAnime.setAlt_titles(alt_title)
-		# 		tempAnime.setLast_watched(my_watched_episodes)
-		# 		tempAnime.setStatus(series_status)
-		# 		if series_status == "1" or series_status == "3": #anime series status: 1 is airing, 2 has finished airing 3 is unaired
-		# 			allShows.append(tempAnime)
-		# 		elif series_status == "2":
-		# 			if (lastWeek <= seriesEnd <= nextWeek):
-		# 				allShows.append(tempAnime)
-		#
 		# #Changed to add the custom titles after pruning all dupes
 		# #add custom titles here
 		# # set was working with ids
-		# for altTitle in user.getCustom_Titles():
-		# 	tempAnime = anime()
-		# 	tempAnime.setTitle(altTitle.strip())
-		# 	tempAnime.setShow_id(tempShowId)
-		# 	tempShowId += 1
-		# 	if(checkDupes(tempAnime.getTitle(), allShows)):
-		# 		allShows.append(tempAnime)
+		for altTitle in user.getCustom_Titles():
+			tempAnime = anime()
+			tempAnime.setTitle(altTitle.strip())
+			tempAnime.setShow_id(tempShowId)
+			tempShowId += 1
+			if(checkDupes(tempAnime.getTitle(), allShows)):
+				allShows.append(tempAnime)
 
-	# print ("Length of all shows(dupes included): " + str(len(allShows)))
-	# allShows = list(set(allShows)) #Removes dupes from list
-	# print ("Length of all shows(incl custom title, no dupes): " + str(len(allShows)))
+	for animeShows in allShows:
+		print (animeShows.getTitle())
+
+	print ("Length of all shows(dupes included): " + str(len(allShows)))
+	allShows = list(set(allShows)) #Removes dupes from list
+	print ("Length of all shows(incl custom title, no dupes): " + str(len(allShows)))
 
 	return allShows
 
