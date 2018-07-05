@@ -101,7 +101,7 @@ def pullMALUserData(userList):
 def getMALShows(malUserFile, user):
 	json_data=open(malUserFile).read()
 	data = json.loads(json_data)
-	#TODO english title (if len > 0) add to custom title
+
 	for bigList in data:
 		if(bigList['status'] == "CURRENT" or bigList['status'] == "PLANNING"):
 			for entry in bigList['entries']:
@@ -113,34 +113,13 @@ def getMALShows(malUserFile, user):
 					if(len(element) >= 1):
 						user.addMalShow(element, my_watched_episodes)
 
+				if(entry['media']['title']['english'] != None):
+					user.addMalShow(entry['media']['title']['english'], my_watched_episodes)
+
 				user.addMalShow(title, my_watched_episodes)
 
 	for show in user.getCustom_Titles():
 			user.addMalShow(show, 0)
-	# with open(malUserFile, 'rt', encoding='utf-8') as f:
-	# 	tree = ET.parse(f)
-	#
-	# 	for node in tree.findall('.//anime'):
-	# 		raw_status = node.find('my_status').text
-	# 		status = raw_status.strip()
-	# 		if status == '1' or status == '6':
-	# 			raw_title = node.find('series_title').text
-	# 			raw_alt_title = node.find('series_synonyms').text #this is a list
-	# 			raw_my_watched_episodes = node.find('my_watched_episodes').text
-	#
-	# 			title = raw_title.strip()
-	# 			alt_title_unsplit = raw_alt_title.strip()
-	# 			alt_title = alt_title_unsplit.split('; ')
-	# 			my_watched_episodes = raw_my_watched_episodes.strip()
-	#
-	# 			for element in alt_title:
-	# 				if(len(element) >= 1):
-	# 					user.addMalShow(element, my_watched_episodes)
-	#
-	# 			user.addMalShow(title, my_watched_episodes)
-	#
-	# 	for show in user.getCustom_Titles():
-	# 			user.addMalShow(show, 0)
 
 def getMatches(malShows, listOfValidFiles):
 	matches = []
