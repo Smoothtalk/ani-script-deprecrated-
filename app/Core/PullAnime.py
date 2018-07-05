@@ -7,6 +7,7 @@ import datetime
 import feedparser
 import urllib
 import xml.etree.ElementTree as ET
+
 from collections import OrderedDict
 from fuzzywuzzy import fuzz
 
@@ -116,13 +117,13 @@ def getAllUniqueAniListShows(users):
 	nextWeek = currDate + datetime.timedelta(days=7)
 	tempShowId = 0
 
+	# find all the user's PTW and Currently watching shows
+	# if show hits criteria
+	# make temp anime and add it to list
+
 	for user in users:
 		json_data=open(user.getDataBaseFileName()).read()
 		data = json.loads(json_data)
-
-		# find all the user's PTW and Currently watching shows
-		# if show hits criteria
-		# make temp anime and add it to list
 
 		for bigList in data:
 			if(bigList['status'] == "CURRENT" or bigList['status'] == "PLANNING"):
@@ -136,6 +137,9 @@ def getAllUniqueAniListShows(users):
 					if(entry['media']["endDate"]['day'] != None):
 						seriesEndStr = str(entry['media']["endDate"]['year']) + '-' + str(entry['media']["endDate"]['month']) + '-' + str(entry['media']["endDate"]['day'])
 						seriesEnd = datetime.datetime.strptime(seriesEndStr, '%Y-%m-%d') #conversion from string to datetime
+
+					if(entry['media']['title']['english'] != None):
+						entry['media']['synonyms'].append(entry['media']['title']['english'])
 
 					tempAnime.setAlt_titles(entry['media']['synonyms'])
 
@@ -153,11 +157,12 @@ def getAllUniqueAniListShows(users):
 			tempAnime.setTitle(altTitle.strip())
 			tempAnime.setShow_id(tempShowId)
 			tempShowId += 1
+
 			if(checkDupes(tempAnime.getTitle(), allShows)):
 				allShows.append(tempAnime)
 
-	for animeShows in allShows:
-		print (animeShows.getTitle())
+	# for animeShows in allShows:
+	# 	print (animeShows.getTitle())
 
 	print ("Length of all shows(dupes included): " + str(len(allShows)))
 	allShows = list(set(allShows)) #Removes dupes from list
@@ -230,14 +235,18 @@ settings = readJson()
 pullAniListUserData(settings['Users'].keys())
 userObjects = generateUserObjects(settings['Users'])
 allShows = getAllUniqueAniListShows(userObjects)
-# feedUrls = getFeeds(settings['Rss Feeds'])
-#
-# matches = []
-# for url in feedUrls:
-# 	if(url != ""):
-# 		feed = feedparser.parse(url)
-# 		releases = feed.get('entries')
-# 		matches = getMatches(releases, allShows, matches)
-# 		#makeMagnets(matches)
-#
-# print ("Length of matches: " + str(len(matches)))
+feedUrls = getFeeds(settings['Rss Feeds'])
+
+matches = []
+
+for url in feedUrls:
+	if(url != ""):
+		feed = feedparser.parse(url)
+		releases = feed.get('entries')
+		matches = getMatches(releases, allShows, matches)
+
+for match in matches:
+	print (match['title'])
+#makeMagnets(matches)
+
+print ("Length of matches: " + str(len(matches)))
