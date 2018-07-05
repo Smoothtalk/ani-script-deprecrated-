@@ -226,7 +226,7 @@ def getFeeds(Rss_Feeds):
 
 settings = readJson()
 
-#pull updated user list from Mal. not /really/ required, but w/e
+#pull updated user list from Anilist. not /really/ required, but w/e
 pullAniListUserData(settings['Users'].keys())
 userObjects = generateUserObjects(settings['Users'])
 allShows = getAllUniqueAniListShows(userObjects)
