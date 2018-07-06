@@ -247,6 +247,6 @@ for url in feedUrls:
 
 for match in matches:
 	print (match['title'])
-#makeMagnets(matches)
+makeMagnets(matches)
 
 print ("Length of matches: " + str(len(matches)))
