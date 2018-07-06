@@ -59,8 +59,8 @@ class User:
 		self.remote_download_dir = userSettings['remote_download_dir']
 		self.discord_ID = userSettings['discord_ID']
 		self.custom_titles = userSettings['custom_titles']
-		self.MalShows = {} #titles of mal shows
-		self.malDatabaseFileName = "Data/" + user + ".json" #Database File name
+		self.AniListShows = {} #titles of AniList shows
+		self.AniListDatabaseFileName = "Data/" + user + ".json" #Database File name
 
 	def getUserName(self):
 		return self.userName
@@ -74,13 +74,13 @@ class User:
 		return self.discord_ID
 	def getCustom_Titles(self):
 		return self.custom_titles
-	def addMalShow(self, malShow, episodesWatched):
-		newShow = {malShow: {'episodesWatched': int(episodesWatched)}}
-		self.MalShows.update(newShow)
-	def getMalShows(self):
-		return self.MalShows
-	def getMalDatabaseFileName(self):
-		return self.malDatabaseFileName
+	def addAniListShow(self, AniListShow, episodesWatched):
+		newShow = {AniListShow: {'episodesWatched': int(episodesWatched)}}
+		self.AniListShows.update(newShow)
+	def getAniListShows(self):
+		return self.AniListShows
+	def getAniListDatabaseFileName(self):
+		return self.AniListDatabaseFileName
 
 def singleFile(torrentTitle):
 	if(os.path.isdir(torrentTitle)):
@@ -93,13 +93,13 @@ def readJson():
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
-def pullMALUserData(userList):
+def pullAniListUserData(userList):
 	for user in userList:
 		command = "python3.5 Tools/retAniList.py " + '\"' + user + '\"'
 		os.system(command)
 
-def getMALShows(malUserFile, user):
-	json_data=open(malUserFile).read()
+def getAniListShows(AniListUserFile, user):
+	json_data=open(AniListUserFile).read()
 	data = json.loads(json_data)
 
 	for bigList in data:
@@ -111,30 +111,30 @@ def getMALShows(malUserFile, user):
 
 				for element in alt_title:
 					if(len(element) >= 1):
-						user.addMalShow(element, my_watched_episodes)
+						user.addAniListShow(element, my_watched_episodes)
 
 				if(entry['media']['title']['english'] != None):
-					user.addMalShow(entry['media']['title']['english'], my_watched_episodes)
+					user.addAniListShow(entry['media']['title']['english'], my_watched_episodes)
 
-				user.addMalShow(title, my_watched_episodes)
+				user.addAniListShow(title, my_watched_episodes)
 
 	for show in user.getCustom_Titles():
-			user.addMalShow(show, 0)
+			user.addAniListShow(show, 0)
 
-def getMatches(malShows, listOfValidFiles):
+def getMatches(AniListShows, listOfValidFiles):
 	matches = []
 
 	for validFile in listOfValidFiles:
-		for show in malShows.keys():
+		for show in AniListShows.keys():
 			if (fuzz.ratio(show, validFile.getSeriesName()) > FUZZ_RATIO) and validFile not in matches:
-				if validFile.getSeriesEpisode() > malShows[show]['episodesWatched']:
+				if validFile.getSeriesEpisode() > AniListShows[show]['episodesWatched']:
 					matches.append(validFile)
 	return matches
 
 def userLoop(settings, isSingleFile, user):
-	pullMALUserData(settings['Users'].keys())
+	pullAniListUserData(settings['Users'].keys())
 	syncingUser = User(user, settings['Users'][user]) #name, name data
-	getMALShows(syncingUser.getMalDatabaseFileName(), syncingUser)
+	getAniListShows(syncingUser.getAniListDatabaseFileName(), syncingUser)
 
 	# return either list of one match, or multiple
 	listOfValidFiles = []
@@ -158,7 +158,7 @@ def userLoop(settings, isSingleFile, user):
 
 		os.chdir(settings['System Settings']['script_location'])
 
-	matches = getMatches(syncingUser.getMalShows(), listOfValidFiles)
+	matches = getMatches(syncingUser.getAniListShows(), listOfValidFiles)
 	if(matches is not None):
 		for match in matches:
 			#TODO fix multiple matches
