@@ -245,8 +245,6 @@ for url in feedUrls:
 		releases = feed.get('entries')
 		matches = getMatches(releases, allShows, matches)
 
-for match in matches:
-	print (match['title'])
 makeMagnets(matches)
 
 print ("Length of matches: " + str(len(matches)))
