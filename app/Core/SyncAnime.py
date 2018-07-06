@@ -163,7 +163,7 @@ def userLoop(settings, isSingleFile, user):
 		for match in matches:
 			#TODO fix multiple matches
 			print (match.getSeriesName())
-			# sync(syncingUser, match)
+			sync(syncingUser, match)
 
 def sync(syncingUser, serialToSync):
 	if(syncingUser.getRemote_Host() != ''):
