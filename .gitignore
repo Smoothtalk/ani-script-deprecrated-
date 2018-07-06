@@ -48,3 +48,7 @@ oldcommand.sh
 tidfile
 torrentFlags
 fuzzytest.py
+tests/
+setup.py
+*.pyc
+.idea/

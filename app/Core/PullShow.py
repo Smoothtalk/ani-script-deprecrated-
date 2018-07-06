@@ -1,23 +1,18 @@
 #!/usr/bin/python
 
-import sys
 import os
-import retMal
-import linecache
 import re
 import codecs
-import glob
 import json
-import xml.etree.ElementTree as ET
-import multiprocessing
-import urllib2
+import urllib.error
+import urllib.request
+import trakt
 import simplejson as json
 from fuzzywuzzy import fuzz
-from urllib2 import Request, urlopen
-from trakt.users import User
-from multiprocessing import Process
 from bs4 import BeautifulSoup
+from trakt.users import User
 from collections import OrderedDict
+import time
 
 class TvShow():
 	def __init__(self):
@@ -39,17 +34,17 @@ class TvShow():
 		return self.last_watched_episode
 
 def readJson():
-	json_data=open("vars.json").read()
+	json_data=open("../vars.json").read()
 	data = json.loads(json_data, object_pairs_hook=OrderedDict)
 	return data #an OrderedDict
 
 def getToken():
-	getTokenURL = "https://torrentapi.org/pubapi_v2.php?get_token=get_token"
+	getTokenURL = "https://torrentapi.org/pubapi_v2.php?app_id=ShowSync&get_token=get_token"
 
 	try:
-		req = urllib2.Request(getTokenURL, None)
-		req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36')
-		response = urllib2.urlopen(req)
+		hdr = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36'}
+		req = urllib.request.Request(getTokenURL, headers=hdr)
+		response = urllib.request.urlopen(req)
 
 		soup = BeautifulSoup(response.read(), "html.parser")
 		soup2 = soup.prettify()
@@ -57,18 +52,18 @@ def getToken():
 		token = soup2[10:-3]
 
 		return token
-	except urllib2.HTTPError,err:
-		print err
+	except urllib.error.HTTPError as e:
+		print (e)
 
 def searchTVTorrents(token, database):
 	#category 41 is hdtv episodes
-	listTorrentsURL = "https://torrentapi.org/pubapi_v2.php?mode=list&category=41&format=json&token="
+	listTorrentsURL = "https://torrentapi.org/pubapi_v2.php?app_id=ShowSync&mode=list&category=41&format=json&token="
 	requestURL = listTorrentsURL + token
 
 	try:
-		req = urllib2.Request(requestURL, None)
-		req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36')
-		response = urllib2.urlopen(req)
+		hdr = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36'}
+		req = urllib.request.Request(requestURL, headers=hdr)
+		response = urllib.request.urlopen(req)
 
 		soup = BeautifulSoup(response.read(), "html.parser")
 		soup2 = soup.prettify()
@@ -77,8 +72,8 @@ def searchTVTorrents(token, database):
 		output.write(soup2)
 		output.close()
 
-	except urllib2.HTTPError,err:
-		print err
+	except urllib.error.HTTPError as e:
+		print (e)
 
 def fixMagnet(magnet):
 	magnet = magnet.strip()
@@ -111,37 +106,38 @@ def getShowDict(torrent_title):
 
 		return data
 	except Exception as e:
-		print str(torrent_title) + " fucked it all up"
+		#print (str(torrent_title) + " fucked it all up")
 		data['Title'] = ""
 		data['Season'] = -1
 		data['Episode'] = -1
 		return data
 
-def getTraktShows():
+def getTraktShows(settings):
 	allShows = []
-	my = User(settings['Users']['Smoothtalk']['traktUserName'])
+	for user in settings['Users']:
+		if(settings['Users'][user]['traktUserName'] != ''):
+			my = User(settings['Users'][user]['traktUserName'])
 
-	for y in range(len(my.watched_shows)):
-		dict = my.watched_shows[y].seasons[-1]
+			for y in range(len(my.watched_shows)):
+				theDict = my.watched_shows[y].seasons[-1]
 
-		# gets the episodes (change to -1 to get current season value
-		# -2 gets all teh episodes you've watched
-		fKey = dict.keys()[-2]
-		values = dict[fKey]
-		last_episode_watched = values[-1]
+				# gets the episodes (change to -1 to get current season value)
+				# -2 gets all the episodes you've watched
+				#MIGHT NOT WORK
+				values = theDict['episodes']
+				last_episode_watched = values[-1]
 
-		episode_Number =  last_episode_watched['number']
-		date_Watched_At = last_episode_watched['last_watched_at']
+				episode_Number =  last_episode_watched['number']
+				date_Watched_At = last_episode_watched['last_watched_at']
 
-		traktShow = TvShow();
-		traktShow.setTitle(my.watched_shows[y])
-		traktShow.setLast_watched_date(date_Watched_At)
-		traktShow.setlast_watched_episode(episode_Number)
-		allShows.append(traktShow)
-
+				traktShow = TvShow();
+				traktShow.setTitle(my.watched_shows[y])
+				traktShow.setLast_watched_date(date_Watched_At)
+				traktShow.setlast_watched_episode(episode_Number)
+				allShows.append(traktShow)
 	return allShows
 
-def compare(allShows, settings, matches):
+def compare(allShows, settings, matches, database):
 	fileNameKey = "filename"
 	magnetKey = "download"
 
@@ -163,16 +159,17 @@ def compare(allShows, settings, matches):
 						# print title.strip() + " - " + 'S' + season[0] + 'E' + episode[0] + ".mkv"
 					# except:
 						# print "unable to title, shitty scene groups"
-					if(fuzz.ratio(str(i.getTitle())[9:].lower(), showDict['Title'].lower()) > 70 and showDict['Episode'] > i.getlast_watched_episode):
+					if (fuzz.ratio(str(i.getTitle())[9:].lower(), showDict['Title'].lower()) > 70 and int(showDict['Episode']) > i.getlast_watched_episode()):
 						regex = r"id=.*.="
 
-						dledShowsFile = open('dledshows', 'a+')
+						os.chdir(settings['System Settings']['script_location'] + "/Data")
+						dledShowsFile = open('dledshows', 'r+')
 						alreadyDLShows = dledShowsFile.read().split("\n")
 
 						epititle = showDict['Title'] + '-S' + showDict['Season'] + 'E' + showDict['Episode']
 
 						if epititle not in alreadyDLShows:
-							print "Downloading"
+							print ("Downloading")
 							fileWithQuotes = '"' + showDict['Title'].strip() + " - " + 'S' + showDict['Season'] + 'E' + showDict['Episode'] + ".torrent" + '"'
 
 							matchDict = {'File': fileWithQuotes}
@@ -180,28 +177,31 @@ def compare(allShows, settings, matches):
 							matchDict.update(magnetDict)
 
 							matches.append(matchDict)
-
+							dledShowsFile = open('dledshows', 'a+')
 							dledShowsFile.write(epititle+'\n')
 
 						dledShowsFile.close()
 
 def generateMagnets(matches):
 	for show in matches:
-		# command = "python Magnet_To_Torrent2.py -m " + '"' + show['Magnet'] + '"' + " -o " + show['File']
+		# os.chdir(settings['System Settings']['script_location'] + "/Core")
+		# command = "python ../Tools/Magnet2Torrent.py -m " + '"' + show['Magnet'] + '"' + " -o " + show['File']
 		# os.system(command)
-        #
+		#
 		# command = "mv " + show['File'] + ' ' + settings['System Settings']['watch_dir']
+		# os.system(command)
 		command = "echo \"it worked\""
 		os.system(command)
 
 settings = readJson()
 os.chdir(settings['System Settings']['script_location'])
 
-database = "RarBG" + ".json"
+database = "Data/RarBG" + ".json"
 matches = []
 
 token = getToken()
+time.sleep(2) #two second delay to avoid the 429 rate limiting since the api is limited to 1req/2s
 searchTVTorrents(token, database)
-allShows = getTraktShows()
-compare(allShows, settings, matches)
-generateMagnets(matches)
+allShows = getTraktShows(settings)
+compare(allShows, settings, matches, database)
+# generateMagnets(matches)
