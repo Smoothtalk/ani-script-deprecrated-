@@ -16,7 +16,7 @@ def readJson():
 async def announce():
 	await discordClient.wait_until_ready()
 
-	messagePayload = "```" + str(sys.argv[1]) + " successfully synced" + "```"
+	messagePayload = "```" + str(sys.argv[1]) + " successfully synced from transmission" + "```"
 
 	messageRecipient = await discordClient.get_user_info(settings['Users'][sys.argv[2]]['discord_ID'])
 	await discordClient.send_message(messageRecipient, messagePayload)
