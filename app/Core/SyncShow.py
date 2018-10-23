@@ -128,7 +128,7 @@ def sync(settings, syncingUser, match, glob, filePath):
 			innerFileName = file
 			filename = match.getTitle() + " - " + 'S' + match.getSeason() + 'E' + match.getEpisode() + ".mkv"
 			seriesFolder = (match.getTitle() + '/' + "Season " + match.getSeason())
-			
+
 			if(syncingUser.getRemote_Host() != ''):
 				if(settings['System Settings']['individual folders'] == "True"):
 					command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mkdir -p " + syncingUser.getRemote_Download_Dir() + seriesFolder.replace(" ", "\ ") + '"'
@@ -154,7 +154,6 @@ def sync(settings, syncingUser, match, glob, filePath):
 						os.system(command)
 						#copy file to download dir
 
-
 		os.chdir(settings['System Settings']['script_location'])
 		command = "python3.5 Tools/DiscordAnnounce.py \'" + filename + '\' ' + syncingUser.getUserName()
 		process = subprocess.call(command, shell=True)
@@ -173,6 +172,7 @@ for user in settings['Users']:
 	if (settings['Users'][user]['traktUserName'] != ""):
 		syncingUser = SyncUser(user, settings['Users'][user])
 		getTraktShows(syncingUser)
+		print (syncingUser.getTraktUserName())
 		match = matchShow(syncRelease, syncingUser.getShows())
 		if (match is not None):
 			print ("Syncing: " + str(match.getTitle()))
