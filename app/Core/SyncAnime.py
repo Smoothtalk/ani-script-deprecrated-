@@ -7,11 +7,13 @@ import subprocess
 import glob
 import xml.etree.ElementTree as ET
 import multiprocessing
+import transmissionrpc
 from fuzzywuzzy import fuzz
 from multiprocessing import Process
 from collections import OrderedDict
 
 FUZZ_RATIO = 70
+TRANSMISSION_PORT = 9091
 validFileExtensions = ['.avi', '.mkv', '.mp4']
 
 class Series:
@@ -20,6 +22,7 @@ class Series:
 	fileName = ""
 	filePath = ""
 	finalFileName = ""
+	torrentHash = sys.argv[2]
 
 	def getSeriesName(self):
 		return self.seriesName
@@ -30,7 +33,10 @@ class Series:
 	def getSeriesFileName(self):
 		return self.fileName
 	def setSeriesTitle(self, fileName):
+		#TODO fix j'darc
+
 		tempName = fileName.replace("_", " ")
+
 		firstHyphen = tempName.rfind(' - ')
 		firstCBrac = tempName.index(']', 0)
 		seriesName = tempName[firstCBrac+2:firstHyphen]
@@ -38,9 +44,10 @@ class Series:
 		episode = episode[:episode.index(' ',0)]
 		filename = seriesName + ' - ' + episode + '.mkv'
 
-		seriesName = seriesName.strip()
+		filename = filename.replace("'", "\'\\'\'")
+		seriesName = seriesName.strip().replace("'", "\'\\'\'")
 
-		self.fileName = fileName
+		self.fileName = fileName.replace("'", "\'\\'\'")
 		self.seriesName = seriesName
 		self.episode = episode
 		self.finalFileName = filename
@@ -50,6 +57,8 @@ class Series:
 		self.filePath = filePath
 	def getFullFilePath(self):
 		return self.filePath
+	def getTorrentHash(self):
+		return self.torrentHash
 
 class User:
 	def __init__(self, user, userSettings):
@@ -95,7 +104,7 @@ def readJson():
 
 def pullAniListUserData(userList):
 	for user in userList:
-		command = "python3.5 Tools/retAniList.py " + '\"' + user + '\"'
+		command = "python3 Tools/retAniList.py " + '\"' + user + '\"'
 		os.system(command)
 
 def getAniListShows(AniListUserFile, user):
@@ -131,7 +140,7 @@ def getMatches(AniListShows, listOfValidFiles):
 					matches.append(validFile)
 	return matches
 
-def userLoop(settings, isSingleFile, user):
+def userLoop(settings, isSingleFile, user, returnDict):
 	pullAniListUserData(settings['Users'].keys())
 	syncingUser = User(user, settings['Users'][user]) #name, name data
 	getAniListShows(syncingUser.getAniListDatabaseFileName(), syncingUser)
@@ -162,28 +171,41 @@ def userLoop(settings, isSingleFile, user):
 	if(matches is not None):
 		for match in matches:
 			#TODO fix multiple matches
-			print (match.getSeriesName())
-			sync(syncingUser, match)
+			print ("Matched: " + match.getSeriesName())
+			status = sync(syncingUser, match)
+			returnDict[user] = status
 
 def sync(syncingUser, serialToSync):
 	if(syncingUser.getRemote_Host() != ''):
 		print ("Syncing: " + serialToSync.getSeriesName() + ' - ' + str(serialToSync.getSeriesEpisode()) + ' to ' + syncingUser.getUserName())
+		#TODO wrap in try except
 		if(settings['System Settings']['individual folders'] == "True"):
-			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() + " \"mkdir -p " + syncingUser.getRemote_Download_Dir() + '/' +  serialToSync.getSeriesName().replace(" ", "\ ") + '"'
+			#.replace(" ", "\ ") after get seriesName
+			command = "mkdir -p \'" + syncingUser.getRemote_Download_Dir() + serialToSync.getSeriesName() + '\''
 			process = subprocess.check_call(command, shell=True)
-			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFullFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName().replace(" ", "\ ") + "\""
+			command = "cp \'" + serialToSync.getFullFilePath().replace("'", "\'\\'\'") + "\' \'" + syncingUser.getRemote_Download_Dir() + serialToSync.getSeriesName() + '\''
 			process = subprocess.check_call(command, shell=True)
-			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + serialToSync.getSeriesName() + '/' + serialToSync.getSeriesFileName() + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesName() + '/' + serialToSync.getFinalName() + "'\""
+			command = "mv '" + syncingUser.getRemote_Download_Dir() + serialToSync.getSeriesName() + '/' + serialToSync.getSeriesFileName() + "' '" + syncingUser.getRemote_Download_Dir() + serialToSync.getSeriesName() + '/' + serialToSync.getFinalName() + '\''
+			process = subprocess.check_call(command, shell=True)
+			command = "chown 1000:1000 \'" + syncingUser.getRemote_Download_Dir() + serialToSync.getSeriesName() + '/' + serialToSync.getFinalName() + '\''
+			process = subprocess.check_call(command, shell=True)
+			command = "chmod 0770 \'" + syncingUser.getRemote_Download_Dir() + serialToSync.getSeriesName() + '/' + serialToSync.getFinalName() + '\''
 			process = subprocess.check_call(command, shell=True)
 		elif(settings['System Settings']['individual folders'] == "False"):
-			command = "rsync --progress -v -z -e 'ssh -p" + syncingUser.getRemote_Port() + "'" + " \"" + serialToSync.getFullFilePath() + "\"" + ' ' + "\"" + syncingUser.getRemote_Host() + ":" + syncingUser.getRemote_Download_Dir() + "\""
+			command = "cp \"" + serialToSync.getFullFilePath() + "\" \"" + syncingUser.getRemote_Download_Dir() + '"'
 			process = subprocess.check_call(command, shell=True)
-			command = "ssh -p" + syncingUser.getRemote_Port() + ' ' + syncingUser.getRemote_Host() +  " \"mv '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesFileName() + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFinalName() + "'\""
+			command = "mv '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getSeriesFileName() + "' '" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFinalName() + '\''
+			process = subprocess.check_call(command, shell=True)
+			command = "chown 1000:1000 \'" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFinalName() + '\''
+			process = subprocess.check_call(command, shell=True)
+			command = "chmod 0770 \'" + syncingUser.getRemote_Download_Dir() + '/' + serialToSync.getFinalName() + '\''
 			process = subprocess.check_call(command, shell=True)
 		os.chdir(settings['System Settings']['script_location'])
-		command = "python3.5 Tools/DiscordAnnounce.py \'" + sys.argv[3] + '\' ' + syncingUser.getUserName()
+		command = "python3 Tools/DiscordAnnounce.py \'" + serialToSync.getSeriesFileName() + '\' ' + syncingUser.getUserName()
+		# print (command)
 		process = subprocess.call(command, shell=True)
-		hashtoFile(sys.argv[2])
+		hashtoFile(serialToSync.getTorrentHash())
+		return True
 
 def hashtoFile(theHash):
 	os.chdir(settings['System Settings']['script_location'])
@@ -195,21 +217,45 @@ def hashtoFile(theHash):
 #TODO sys.argv[1] is the same as setFilePath(...) deal with it or refactor it out
 if __name__=='__main__':
 	try:
+		# print ('arg1: ' + sys.argv[1])
+		# print ('arg2: ' + sys.argv[2])
+		# print ('arg3: ' + sys.argv[3])
 		settings = readJson()
+		#check for list index out of range
 		isSingleFile = singleFile(sys.argv[1])
 		#for automation tools because PATH is hard
 		os.chdir(settings['System Settings']['script_location'])
 
 		#TODO change to check if part of host host_download_dir is in sys.argv[1]
-		if "downloads/Anime" not in sys.argv[1]:
+		if "Downloads/Complete" not in sys.argv[1]:
 			sys.exit(1)
 
 		jobs = []
+		manager = multiprocessing.Manager()
+		returnDict = manager.dict()
 
 		for user in settings['Users']:
-			p = multiprocessing.Process(target=userLoop, args=(settings, isSingleFile, user))
+			p = multiprocessing.Process(target=userLoop, args=(settings, isSingleFile, user, returnDict))
 			jobs.append(p)
 			p.start()
+
+		for process in jobs:
+			process.join()
+
+		#TODO
+		#construct failure dictionary by mapping if sync == false to each key
+		#each key has a dictionary of values with hte only value being successfully
+		#{user1: {sync: true}, user2: {sync: false}, user3: {sync: true}, user4: {sync: false}}
+		#-> {user2: false, user4: false}
+		#if fail dict.length > 1
+		# print failed to sync to: user2, user4
+
+		#temp
+		if(False in returnDict.values()):
+			print ('Failed to sync to someone')
+		else:
+			tc = transmissionrpc.Client('localhost', port=TRANSMISSION_PORT)
+			tc.remove_torrent(sys.argv[2], True)
 
 	except Exception as e:
 		print (e)
