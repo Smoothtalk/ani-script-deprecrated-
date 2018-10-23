@@ -6,12 +6,16 @@ import json
 import datetime
 import feedparser
 import urllib
+import transmissionrpc
 import xml.etree.ElementTree as ET
 
 from collections import OrderedDict
 from fuzzywuzzy import fuzz
 
+feedparser.USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
+
 FUZZ_RATIO = 85
+TRANSMISSION_PORT = 9091
 
 #anime object to store relevant deets
 class userClass():
@@ -81,7 +85,7 @@ def getSeriesTitle(fileName):
 def pullAniListUserData(userList):
 	for user in userList:
 		os.chdir('../')
-		command = "python3.5 Tools/retAniList.py " + '\"' + user + '\"'
+		command = "python3 Tools/retAniList.py " + '\"' + user + '\"'
 		os.system(command)
 		os.chdir('Core/')
 
@@ -185,7 +189,7 @@ def getMatches(releases, allShows, matches):
 
 	return matches
 
-def makeMagnets(matches):
+def makeMagnets(matches, transmissionClient):
 	tidfile = open('../Data/tidfile', 'r+') #stores torrent tids so that they wont download again
 	existingTIDs = tidfile.read().split("\n")
 	tidfile.close()
@@ -195,8 +199,8 @@ def makeMagnets(matches):
 	nextWeek = currDate + datetime.timedelta(days=7)
 
 	for matchedShow in matches:
-		#print (matchedShow.title)
-		title = matchedShow.title
+		# print (matchedShow.title)
+		title = matchedShow.title.replace("'", "\'")
 		url = matchedShow.link
 
 		pubDate = matchedShow.published[:-6]
@@ -204,22 +208,30 @@ def makeMagnets(matches):
 
 		if(lastWeek <= datetime_publish <= nextWeek):
 			if ".torrent" in url: #Nyaa RSS
-					tid = str(url[25:31])
+					tid = str(url[25:32])
 					fileWithQuotes = '"' + tid + ".torrent" + '"'
-					command = "wget \'" + url + '\''
-					command = ""
 			else: #HS RSS
 				tid = str(url[20:52])
 				fileWithQuotes = '"' + title + ".torrent" + '"'
-				command = "python ../Tools/Magnet2Torrent.py -m " + '"' + url + '"' + " -o " + fileWithQuotes
 
 		if tid not in existingTIDs: #if tid doesn't already exist, download
-			os.system(command)
-			command = "mv " + fileWithQuotes + ' ' + settings['System Settings']['watch_dir']
-			os.system(command)
+			incomingTorrent = transmissionClient.add_torrent(url)
 			tidfile = open('../Data/tidfile', 'a+') #stores torrent tids so that they wont download again
 			tidfile.write(tid+"\n")
+			pollTorrent(transmissionClient, incomingTorrent.hashString)
 	tidfile.close()
+
+def pollTorrent(transmissionClient, torrentID):
+	torrent = transmissionClient.get_torrent(torrentID)
+	while(torrent.metadataPercentComplete < 1.0):
+		torrent = transmissionClient.get_torrent(torrentID)
+	while(torrent.percentDone < 1.0):
+		#TODO add nice polling here
+		torrent = transmissionClient.get_torrent(torrentID)
+	#torrent done
+	fullPath = torrent.downloadDir + '/' + torrent.name
+	command = "python3 ../Sync.py \'" +  fullPath.replace("'", "\'\\'\'") + '\' \'' + torrentID + '\' \'' + torrent.name.replace("'", "\'\\'\'") + '\''
+	os.system(command)
 
 def getFeeds(Rss_Feeds):
 	feedList = []
@@ -232,6 +244,7 @@ def getFeeds(Rss_Feeds):
 settings = readJson()
 
 #pull updated user list from Anilist. not /really/ required, but w/e
+tc = transmissionrpc.Client('localhost', port=TRANSMISSION_PORT)
 pullAniListUserData(settings['Users'].keys())
 userObjects = generateUserObjects(settings['Users'])
 allShows = getAllUniqueAniListShows(userObjects)
@@ -245,6 +258,5 @@ for url in feedUrls:
 		releases = feed.get('entries')
 		matches = getMatches(releases, allShows, matches)
 
-makeMagnets(matches)
-
 print ("Length of matches: " + str(len(matches)))
+makeMagnets(matches, tc)
