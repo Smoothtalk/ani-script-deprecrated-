@@ -10,9 +10,7 @@ noRtorrent = "The program \'rtorrent\' is currently not installed. You can insta
 rtorrentAuto = '#system.method.set_key=event.download.finished,ascript,\"execute=python3.5,' + homedir + '/ani-script/app/Sync.py,$d.get_base_path=,$d.get_hash=,$d.get_name=\"'
 cronTabData = "0,30 * * * * cd " + homedir + "/ani-script/app/Core && python3.5 PullAnime.py > /tmp/AnimePull.log\n5,35 * * * * cd " + homedir + "/ani-script/app/Core && python3.5 PullShow.py > /tmp/ShowPull.log\n0,0 * * * 0 cd " + homedir + "/ani-script/app/Tools && python3.5 DeleteFiles.py > /tmp/Delete.log\n5,0 * * * 0 cd " + homedir + "/downloads/Anime && find -size 0 -delete\n"
 
-# Watch a directory for new torrents, and stop those that have been deleted.
-tempData = "schedule = watch_directory,5,5,\"load_start=" + homedir + "/downloads/watch/*.torrent, view.set_visible=view_group_1, d.directory.set=" + homedir +"/downloads/Anime\""
-
+@TODO refactor rutorrent to tranmission
 def checkRutorrent():
 	try:
 		process = subprocess.Popen(["rtorrent", "-h"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -20,35 +18,21 @@ def checkRutorrent():
 			output = process.stdout.readline()
 			error = process.stderr.readline()
 			print ("Rtorrent found on system")
-
 			os.chdir(os.path.expanduser('~'))
 			lineInFile = False
-
 			with open(".rtorrent.rc", "r") as ins:
 				for line in ins:
 					if line.strip() == rtorrentAuto.strip():
 						lineInFile = True
-				if(lineInFile == False):
-					ins = open(".rtorrent.rc", "a")
-					ins.write(rtorrentAuto)
-					ins.write('\n')
-					ins.close()
-
-				lineInFile = False
-
-				for line in ins:
-					if line.strip() == tempData.strip():
-						lineInFile = True
-				if(lineInFile == False):
-					ins = open(".rtorrent.rc", "a")
-					ins.write(tempData)
-					ins.write('\n')
-					ins.close()
-
 			ins.close()
 
-			return
+			if(lineInFile == False):
+				ins = open(".rtorrent.rc", "a")
+				ins.write(rtorrentAuto)
+				ins.write('\n')
+				ins.close()
 
+			return
 	except OSError as e:
 		if e.errno == os.errno.ENOENT:
 			print ("Rtorrent not installed")
