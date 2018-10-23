@@ -7,12 +7,12 @@ import json
 import urllib.error
 import urllib.request
 import trakt
+import time
 import simplejson as json
 from fuzzywuzzy import fuzz
 from bs4 import BeautifulSoup
 from trakt.users import User
 from collections import OrderedDict
-import time
 
 class TvShow():
 	def __init__(self):
@@ -39,7 +39,7 @@ def readJson():
 	return data #an OrderedDict
 
 def getToken():
-	getTokenURL = "https://torrentapi.org/pubapi_v2.php?app_id=ShowSync&get_token=get_token"
+	getTokenURL = "https://torrentapi.org/pubapi_v2.php?app_id=Jackett&get_token=get_token"
 
 	try:
 		hdr = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36'}
@@ -57,11 +57,11 @@ def getToken():
 
 def searchTVTorrents(token, database):
 	#category 41 is hdtv episodes
-	listTorrentsURL = "https://torrentapi.org/pubapi_v2.php?app_id=ShowSync&mode=list&category=41&format=json&token="
+	listTorrentsURL = "https://torrentapi.org/pubapi_v2.php?app_id=Jackett&mode=list&category=41&format=json&token="
 	requestURL = listTorrentsURL + token
 
 	try:
-		hdr = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3004.3 Safari/537.36'}
+		hdr = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'}
 		req = urllib.request.Request(requestURL, headers=hdr)
 		response = urllib.request.urlopen(req)
 
@@ -72,8 +72,10 @@ def searchTVTorrents(token, database):
 		output.write(soup2)
 		output.close()
 
-	except urllib.error.HTTPError as e:
-		print (e)
+	except urllib.error.HTTPError as err:
+		print(err.code)
+		print(err.reason)
+		print(err.headers)
 
 def fixMagnet(magnet):
 	magnet = magnet.strip()
@@ -137,7 +139,7 @@ def getTraktShows(settings):
 				allShows.append(traktShow)
 	return allShows
 
-def compare(allShows, settings, matches, database):
+def compare(allShows, settings, matches):
 	fileNameKey = "filename"
 	magnetKey = "download"
 
@@ -159,6 +161,7 @@ def compare(allShows, settings, matches, database):
 						# print title.strip() + " - " + 'S' + season[0] + 'E' + episode[0] + ".mkv"
 					# except:
 						# print "unable to title, shitty scene groups"
+					print (showDict['Title'].lower())
 					if (fuzz.ratio(str(i.getTitle())[9:].lower(), showDict['Title'].lower()) > 70 and int(showDict['Episode']) > i.getlast_watched_episode()):
 						regex = r"id=.*.="
 
@@ -167,7 +170,7 @@ def compare(allShows, settings, matches, database):
 						alreadyDLShows = dledShowsFile.read().split("\n")
 
 						epititle = showDict['Title'] + '-S' + showDict['Season'] + 'E' + showDict['Episode']
-
+						#print (alreadyDLShows)
 						if epititle not in alreadyDLShows:
 							print ("Downloading")
 							fileWithQuotes = '"' + showDict['Title'].strip() + " - " + 'S' + showDict['Season'] + 'E' + showDict['Episode'] + ".torrent" + '"'
@@ -184,12 +187,12 @@ def compare(allShows, settings, matches, database):
 
 def generateMagnets(matches):
 	for show in matches:
-		# os.chdir(settings['System Settings']['script_location'] + "/Core")
-		# command = "python ../Tools/Magnet2Torrent.py -m " + '"' + show['Magnet'] + '"' + " -o " + show['File']
-		# os.system(command)
-		#
-		# command = "mv " + show['File'] + ' ' + settings['System Settings']['watch_dir']
-		# os.system(command)
+		os.chdir(settings['System Settings']['script_location'] + "/Core")
+		command = "python ../Tools/Magnet2Torrent.py -m " + '"' + show['Magnet'] + '"' + " -o " + show['File']
+		os.system(command)
+
+		command = "mv " + show['File'] + ' ' + settings['System Settings']['watch_dir']
+		os.system(command)
 		command = "echo \"it worked\""
 		os.system(command)
 
@@ -200,8 +203,8 @@ database = "Data/RarBG" + ".json"
 matches = []
 
 token = getToken()
-time.sleep(2) #two second delay to avoid the 429 rate limiting since the api is limited to 1req/2s
+time.sleep(2)
 searchTVTorrents(token, database)
 allShows = getTraktShows(settings)
-compare(allShows, settings, matches, database)
-# generateMagnets(matches)
+compare(allShows, settings, matches)
+generateMagnets(matches)
