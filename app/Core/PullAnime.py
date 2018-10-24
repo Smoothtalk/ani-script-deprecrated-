@@ -230,7 +230,11 @@ def pollTorrent(transmissionClient, torrentID):
 		torrent = transmissionClient.get_torrent(torrentID)
 	#torrent done
 	fullPath = torrent.downloadDir + '/' + torrent.name
-	command = "python3 ../Sync.py \'" +  fullPath.replace("'", "\'\\'\'") + '\' \'' + torrentID + '\' \'' + torrent.name.replace("'", "\'\\'\'") + '\''
+
+	if("'" in torrent.name):
+		command = "python3 ../Sync.py \'" +  fullPath.replace("'", "\'\\'\'") + '\' \'' + torrentID + '\' \'' + torrent.name.replace("'", "\'\\'\'") + '\''
+	else:
+		command = "python3 ../Sync.py \'" +  fullPath + '\' \'' + torrentID + '\' \'' + torrent.name + '\''
 	os.system(command)
 
 def getFeeds(Rss_Feeds):
