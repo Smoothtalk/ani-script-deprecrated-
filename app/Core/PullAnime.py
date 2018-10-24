@@ -6,12 +6,14 @@ import json
 import datetime
 import feedparser
 import urllib
+import progressbar
 import transmissionrpc
 import xml.etree.ElementTree as ET
 
 from collections import OrderedDict
 from fuzzywuzzy import fuzz
 
+bar = progressbar.ProgressBar(maxval=1, widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
 feedparser.USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
 
 FUZZ_RATIO = 85
@@ -225,10 +227,11 @@ def pollTorrent(transmissionClient, torrentID):
 	torrent = transmissionClient.get_torrent(torrentID)
 	while(torrent.metadataPercentComplete < 1.0):
 		torrent = transmissionClient.get_torrent(torrentID)
+    bar.start()
 	while(torrent.percentDone < 1.0):
-		#TODO add nice polling here
+		bar.update(torrent.percentDone)
 		torrent = transmissionClient.get_torrent(torrentID)
-	#torrent done
+	bar.finish()
 	fullPath = torrent.downloadDir + '/' + torrent.name
 
 	if("'" in torrent.name):
