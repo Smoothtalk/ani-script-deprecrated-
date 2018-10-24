@@ -12,7 +12,7 @@ from fuzzywuzzy import fuzz
 from multiprocessing import Process
 from collections import OrderedDict
 
-FUZZ_RATIO = 70
+FUZZ_RATIO = 85
 TRANSMISSION_PORT = 9091
 validFileExtensions = ['.avi', '.mkv', '.mp4']
 
